@@ -1,7 +1,6 @@
 <div class="wrap mlcp-wrap">
     <?php echo MLCP_Helpers::render_admin_header('mlcp-sort', 'ML Banner Pro', 'Defina a ordem manual de cada grupo sem depender do template.'); ?>
     <h1>Ordenação dos grupos</h1>
-
     <div class="mlcp-card-panel">
         <h2>Selecione o grupo</h2>
         <div class="mlcp-sort-toolbar">
