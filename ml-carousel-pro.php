@@ -2,20 +2,23 @@
 /**
  * Plugin Name:       ML Banner Pro
  * Plugin URI:        https://mlopesdesign.com.br
- * Description:       Carrossel profissional com grupos, múltiplos shortcodes, ordenação administrativa, autoplay e integração segura com templates como Nicepage.
- * Version:           1.10.11
- * Author:            Marcio Lopes
- * Author URI:        https://mlopesdesign.com.br
- * Text Domain:       ml-carousel-pro
+ * Description:       Carrossel profissional com grupos, múltiplos shortcodes, ordenação administrativa, autoplay, analytics e integração segura com templates como Nicepage.
+ * Version:           1.10.19
  * Requires at least: 6.0
  * Requires PHP:      7.4
+ * Tested up to:      6.7
+ * Author:            Marcio Lopes
+ * Author URI:        https://mlopesdesign.com.br
+ * License:           GPLv2 or later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain:       ml-carousel-pro
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-define('MLCP_VERSION', '1.10.11');
+define('MLCP_VERSION', '1.10.19');
 define('MLCP_PLUGIN_FILE', __FILE__);
 define('MLCP_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('MLCP_PLUGIN_URL', plugin_dir_url(__FILE__));
@@ -34,6 +37,7 @@ require_once MLCP_PLUGIN_DIR . 'includes/class-mlcp-admin.php';
 require_once MLCP_PLUGIN_DIR . 'includes/class-mlcp-meta-boxes.php';
 require_once MLCP_PLUGIN_DIR . 'includes/class-mlcp-shortcodes.php';
 require_once MLCP_PLUGIN_DIR . 'includes/class-mlcp-license-manager.php';
+require_once MLCP_PLUGIN_DIR . 'includes/class-mlcp-github-updater.php';
 
 register_activation_hook(__FILE__, array('MLCP_Install', 'activate'));
 
@@ -80,6 +84,7 @@ final class ML_Carousel_Pro {
         add_action('init', array('MLCP_Helpers', 'migrate_legacy_analytics'));
 
         add_shortcode('ml_carousel', array('MLCP_Shortcodes', 'render'));
+        add_action('admin_init', array('MLCP_GitHub_Updater', 'init'));
     }
 }
 
