@@ -17,7 +17,6 @@ class MLCP_Post_Types {
             'not_found' => __('Nenhum item encontrado', MLCP_TEXT_DOMAIN),
             'menu_name' => __('Itens', MLCP_TEXT_DOMAIN),
         );
-
         register_post_type(MLCP_POST_TYPE, array(
             'labels' => $labels,
             'public' => false,
