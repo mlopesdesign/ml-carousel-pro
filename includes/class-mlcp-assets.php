@@ -27,24 +27,15 @@ class MLCP_Assets {
             'post-new.php',
             'edit.php',
         );
-
         $screen = function_exists('get_current_screen') ? get_current_screen() : null;
-        if (!$screen) {
-            return;
-        }
-
-        $is_plugin_screen = in_array($hook, $allowed, true)
-            || $screen->post_type === MLCP_POST_TYPE
-            || $screen->taxonomy === MLCP_GROUP_TAX;
-
-        if (!$is_plugin_screen) {
-            return;
-        }
-
+        if (!$screen) { return; }
+        $is_plugin_screen = in_array($hook, $allowed, true) || $screen->post_type === MLCP_POST_TYPE || $screen->taxonomy === MLCP_GROUP_TAX;
+        if (!$is_plugin_screen) { return; }
         wp_enqueue_media();
-        wp_enqueue_style('mlcp-admin', MLCP_PLUGIN_URL . 'assets/css/admin.css', array(), MLCP_VERSION);
+        wp_enqueue_style('wp-color-picker');
+        wp_enqueue_style('mlcp-admin', MLCP_PLUGIN_URL . 'assets/css/admin.css', array('wp-color-picker'), MLCP_VERSION);
         wp_enqueue_script('jquery-ui-sortable');
-        wp_enqueue_script('mlcp-admin', MLCP_PLUGIN_URL . 'assets/js/admin.js', array('jquery', 'jquery-ui-sortable'), MLCP_VERSION, true);
+        wp_enqueue_script('mlcp-admin', MLCP_PLUGIN_URL . 'assets/js/admin.js', array('jquery', 'jquery-ui-sortable', 'wp-color-picker'), MLCP_VERSION, true);
         wp_localize_script('mlcp-admin', 'mlcpAdmin', array(
             'ajaxUrl' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('mlcp_admin_nonce'),
@@ -55,7 +46,6 @@ class MLCP_Assets {
             'saveError' => __('Não foi possível salvar a ordenação.', MLCP_TEXT_DOMAIN),
         ));
     }
-
     public static function enqueue_front() {
         wp_register_style('mlcp-front', MLCP_PLUGIN_URL . 'assets/css/front.css', array(), MLCP_VERSION);
         wp_register_script('mlcp-front', MLCP_PLUGIN_URL . 'assets/js/front.js', array(), MLCP_VERSION, true);
