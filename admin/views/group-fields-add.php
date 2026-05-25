@@ -12,6 +12,14 @@
     <p class="description">Quando ativo, a altura acompanha a largura do banner com base na proporção largura ÷ altura.</p>
 </div>
 <div class="form-field">
+    <label for="mlcp_image_fit">Ajuste da imagem</label>
+    <select name="mlcp_image_fit" id="mlcp_image_fit">
+        <option value="cover" <?php selected($settings['image_fit'], 'cover'); ?>>Cover — preenche e corta</option>
+        <option value="contain" <?php selected($settings['image_fit'], 'contain'); ?>>Contain — exibe inteira sem cortar</option>
+    </select>
+    <p class="description">Use <strong>Contain</strong> quando as imagens do grupo têm proporções diferentes e não podem ser cortadas.</p>
+</div>
+<div class="form-field">
     <label><input type="checkbox" name="mlcp_rounded_corners" value="1" <?php checked($settings['rounded_corners'], 1); ?> /> Usar cantos arredondados</label>
 </div>
 <div class="form-field">

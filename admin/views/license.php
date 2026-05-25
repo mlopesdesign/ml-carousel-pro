@@ -106,5 +106,27 @@ $badge_class = $premium_enabled ? 'is-green' : 'is-blue';
             </table>
             <p class="mlcp-license-note">O Trial é controlado no servidor de licença. Reinstalar o plugin não concede um novo período no mesmo site.</p>
         </section>
+        <section class="mlcp-card-panel">
+            <div class="mlcp-card-head">
+                <h2>Atualizações via GitHub</h2>
+                <span class="mlcp-pill is-dark">GitHub Updater</span>
+            </div>
+            <?php
+            $diag = MLCP_GitHub_Updater::get_diagnostics();
+            ?>
+            <table class="widefat striped">
+                <tbody>
+                    <tr><td><strong>Repositório configurado</strong></td><td><a href="<?php echo esc_url( $diag['repo'] ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $diag['repo'] ); ?></a></td></tr>
+                    <tr><td><strong>Versão instalada</strong></td><td><?php echo esc_html( $diag['current_version'] ); ?></td></tr>
+                    <tr><td><strong>Versão no GitHub</strong></td><td><?php echo esc_html( $diag['remote_version'] ); ?></td></tr>
+                    <tr><td><strong>Atualização disponível</strong></td><td><?php echo esc_html( $diag['update_available'] ); ?></td></tr>
+                    <tr><td><strong>Status da fonte</strong></td><td><?php echo esc_html( $diag['source_status'] ); ?></td></tr>
+                    <tr><td><strong>Token configurado</strong></td><td><?php echo esc_html( $diag['token_set'] ); ?></td></tr>
+                    <tr><td><strong>ZIP detectado no release</strong></td><td><?php echo esc_html( $diag['zip_detected'] ); ?></td></tr>
+                </tbody>
+            </table>
+            <p class="mlcp-license-note">Para repositório privado, adicione ao <code>wp-config.php</code>:<br><code>define( 'MLMD_GITHUB_TOKEN_ML_CAROUSEL_PRO', 'seu_token_aqui' );</code></p>
+        </section>
+
     </div>
 </div>

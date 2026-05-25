@@ -1,0 +1,25 @@
+# WordPress.org SVN deploy — DISABLED (preparation only)
+# Enable this workflow only after WordPress.org approval.
+# Required secrets: SVN_USERNAME, SVN_PASSWORD
+# Required variables: WPORG_PLUGIN_SLUG=ml-carousel-pro, WPORG_BUILD_DIR=ml-carousel-pro
+
+name: Deploy to WordPress.org (DISABLED)
+
+on:
+  workflow_dispatch:
+    # Manual trigger only — do not run automatically
+    # Remove this block and add tag trigger after WP.org approval
+
+jobs:
+  deploy:
+    if: false  # Hard-disabled — remove this line after approval
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to WordPress.org SVN
+        uses: 10up/action-wordpress-plugin-deploy@v2
+        env:
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SLUG: ${{ vars.WPORG_PLUGIN_SLUG }}
+          BUILD_DIR: ${{ vars.WPORG_BUILD_DIR }}

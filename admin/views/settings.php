@@ -37,8 +37,9 @@
             <label>Autoplay speed (ms)
                 <input type="number" min="1000" step="100" name="default_autoplay_speed" value="<?php echo esc_attr($settings['default_autoplay_speed']); ?>" />
             </label>
-            <label>Opacidade do overlay
-                <input type="text" name="default_overlay_opacity" value="<?php echo esc_attr($settings['default_overlay_opacity']); ?>" />
+            <label class="mlcp-check-row"><input type="checkbox" name="default_overlay_enabled" value="1" <?php checked($settings['default_overlay_enabled'], 1); ?> /> Ativar sobreamento por padrão</label>
+            <label>Percentual do sobreamento (%)
+                <input type="number" min="0" max="100" step="1" name="default_overlay_opacity" value="<?php echo esc_attr((int) $settings['default_overlay_opacity']); ?>" />
             </label>
             <label class="mlcp-check-row"><input type="checkbox" name="default_autoplay" value="1" <?php checked($settings['default_autoplay'], 1); ?> /> Ativar autoplay por padrão</label>
             <label class="mlcp-check-row"><input type="checkbox" name="default_arrows" value="1" <?php checked($settings['default_arrows'], 1); ?> /> Mostrar setas por padrão</label>

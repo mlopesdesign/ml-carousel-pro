@@ -62,7 +62,9 @@ class MLCP_Meta_Boxes {
             '_mlcp_image_url' => isset($_POST['mlcp_image_url']) ? esc_url_raw(wp_unslash($_POST['mlcp_image_url'])) : '',
             '_mlcp_date' => isset($_POST['mlcp_date']) ? sanitize_text_field(wp_unslash($_POST['mlcp_date'])) : '',
             '_mlcp_subtitle' => isset($_POST['mlcp_subtitle']) ? sanitize_text_field(wp_unslash($_POST['mlcp_subtitle'])) : '',
-            '_mlcp_link' => isset($_POST['mlcp_link']) ? esc_url_raw(wp_unslash($_POST['mlcp_link'])) : '',
+            '_mlcp_link'          => isset($_POST['mlcp_link']) ? esc_url_raw(wp_unslash($_POST['mlcp_link'])) : '',
+            '_mlcp_item_bg_color' => isset($_POST['mlcp_item_bg_color']) ? sanitize_hex_color(wp_unslash($_POST['mlcp_item_bg_color'])) ?? '' : '',
+            '_mlcp_item_margin'   => isset($_POST['mlcp_item_margin']) ? max(0, min(200, (int) $_POST['mlcp_item_margin'])) : 0,
             '_mlcp_new_tab' => !empty($_POST['mlcp_new_tab']) ? 1 : 0,
             '_mlcp_active' => !empty($_POST['mlcp_active']) ? 1 : 0,
         );

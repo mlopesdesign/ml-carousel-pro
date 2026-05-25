@@ -107,6 +107,16 @@ class MLCP_Shortcodes {
         $overlay_strength = $overlay_enabled ? ($overlay_opacity / 100) : 0;
         $show_title = MLCP_Helpers::normalize_bool($atts['show_title'], $group_settings['show_title']);
         $show_subtitle = MLCP_Helpers::normalize_bool($atts['show_subtitle'], $group_settings['show_subtitle']);
+        $image_fit = in_array($group_settings['image_fit'] ?? 'cover', array('cover', 'contain'), true) ? $group_settings['image_fit'] : 'cover';
+        // card_bg_color: group-level default (overridden per item below)
+        $raw_bg_group  = $group_settings['card_bg_color'] ?? '';
+        $card_margin_group = max(0, min(200, (int) ($group_settings['card_margin'] ?? 0)));
+        if ($raw_bg_group !== '') {
+            $card_bg_default = sanitize_hex_color($raw_bg_group) ?? 'transparent';
+        } else {
+            $card_bg_default = $image_fit === 'contain' ? 'transparent' : '#111';
+        }
+        $card_margin_default = $card_margin_group;
         $uid = 'mlcp-' . wp_rand(1000, 99999);
 
         wp_enqueue_style('mlcp-front');
@@ -116,7 +126,7 @@ class MLCP_Shortcodes {
         ?>
         <div id="<?php echo esc_attr($uid); ?>"
              class="mlcp-carousel <?php echo esc_attr(trim((string) $atts['class'])); ?>"
-             style="<?php echo esc_attr('--mlcp-width:' . $block_width . ';--mlcp-height:' . $legacy_height . ';--mlcp-card-width:' . $card_width_px . 'px;--mlcp-height-px:' . $height_px . 'px;--mlcp-ratio:' . $card_width_px . ' / ' . $height_px . ';--mlcp-desktop:' . $desktop . ';--mlcp-tablet:' . $tablet . ';--mlcp-mobile:' . $mobile . ';--mlcp-gap:' . $gap . 'px;--mlcp-overlay:' . $overlay_strength . ';'); ?>"
+             style="<?php echo esc_attr('--mlcp-width:' . $block_width . ';--mlcp-height:' . $legacy_height . ';--mlcp-card-width:' . $card_width_px . 'px;--mlcp-height-px:' . $height_px . 'px;--mlcp-ratio:' . $card_width_px . ' / ' . $height_px . ';--mlcp-desktop:' . $desktop . ';--mlcp-tablet:' . $tablet . ';--mlcp-mobile:' . $mobile . ';--mlcp-gap:' . $gap . 'px;--mlcp-overlay:' . $overlay_strength . ';--mlcp-image-fit:' . $image_fit . ';--mlcp-card-bg:' . $card_bg_default . ';--mlcp-card-margin:' . $card_margin_default . 'px;'); ?>"
              data-desktop="<?php echo esc_attr($desktop); ?>"
              data-tablet="<?php echo esc_attr($tablet); ?>"
              data-mobile="<?php echo esc_attr($mobile); ?>"
@@ -154,7 +164,7 @@ class MLCP_Shortcodes {
                                    data-mlcp-item-id="<?php echo esc_attr($item->ID); ?>"
                                    href="<?php echo esc_url($meta['link']); ?>"
                                    <?php echo $target; ?>
-                                   aria-label="<?php echo $title; ?>">
+                                   aria-label="<?php echo esc_attr($title); ?>">
                             <?php else : ?>
                                 <span class="mlcp-link mlcp-link--lightbox"
                                       data-mlcp-track-click="1"
@@ -163,7 +173,7 @@ class MLCP_Shortcodes {
                                       tabindex="0"
                                       aria-label="<?php echo esc_attr(sprintf('Ver imagem: %s', get_the_title($item->ID))); ?>"
                                       data-mlcp-lightbox="<?php echo esc_url($img_full); ?>"
-                                      data-mlcp-lightbox-alt="<?php echo $title; ?>">
+                                      data-mlcp-lightbox-alt="<?php echo esc_attr($title); ?>">
                             <?php endif; ?>
                                 <div class="mlcp-image-wrap">
                                     <img src="<?php echo esc_url($img); ?>" alt="<?php echo $title; ?>" />

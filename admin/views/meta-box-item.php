@@ -17,6 +17,26 @@
     </div>
 
     <div class="mlcp-field">
+        <label for="mlcp_item_bg_color">Cor de fundo</label>
+        <input type="text"
+               name="mlcp_item_bg_color"
+               id="mlcp_item_bg_color"
+               value="<?php echo esc_attr($meta['item_bg_color'] ?? ''); ?>"
+               class="mlcp-color-picker"
+               data-default-color="" />
+        <p class="description">Útil para imagens PNG com fundo transparente. Deixe em branco para usar o padrão do grupo.</p>
+    </div>
+
+    <div class="mlcp-field mlcp-field-compact">
+        <label for="mlcp_item_margin">Margem interna (px)</label>
+        <input type="number" min="0" max="200" step="1"
+               name="mlcp_item_margin"
+               id="mlcp_item_margin"
+               value="<?php echo esc_attr((int) ($meta['item_margin'] ?? 0)); ?>" />
+        <p class="description">Espaço entre a borda e a imagem. 0 = sem margem.</p>
+    </div>
+
+    <div class="mlcp-field">
         <label for="mlcp_date">Data</label>
         <input type="text" name="mlcp_date" id="mlcp_date" value="<?php echo esc_attr($meta['date']); ?>" />
     </div>

@@ -6,25 +6,24 @@ if (!defined('ABSPATH')) {
 class MLCP_Helpers {
     public static function get_settings() {
         $defaults = array(
-            'default_width_value' => 1140,
-            'default_width_unit' => 'px',
+            'default_width_value'     => 1140,
+            'default_width_unit'      => 'px',
             'default_lock_proportion' => 0,
             'default_rounded_corners' => 1,
-            'default_desktop' => 3,
-            'default_tablet' => 2,
-            'default_mobile' => 1,
-            'default_gap' => 18,
-            'default_autoplay' => 1,
-            'default_autoplay_speed' => 4500,
-            'default_arrows' => 1,
-            'default_overlay_opacity' => '0.42',
-            'default_show_title' => 1,
-            'default_show_subtitle' => 1,
+            'default_desktop'         => 3,
+            'default_tablet'          => 2,
+            'default_mobile'          => 1,
+            'default_gap'             => 18,
+            'default_autoplay'        => 1,
+            'default_autoplay_speed'  => 4500,
+            'default_arrows'          => 1,
             'default_overlay_enabled' => 1,
             'default_overlay_opacity' => 42,
-            'license_server_url' => 'https://license.mlopesdesign.com.br',
-            'license_product_id' => 'ml-carousel-pro',
-            'license_product_name' => 'ML Banner Pro',
+            'default_show_title'      => 1,
+            'default_show_subtitle'   => 1,
+            'license_server_url'      => 'https://license.mlopesdesign.com.br',
+            'license_product_id'      => 'ml-carousel-pro',
+            'license_product_name'    => 'ML Banner Pro',
         );
 
         $saved = get_option('mlcp_settings', array());
@@ -49,22 +48,24 @@ class MLCP_Helpers {
         $settings = self::get_settings();
 
         return array(
-            'width_px' => 320,
-            'height_px' => 320,
+            'width_px'        => 320,
+            'height_px'       => 320,
             'lock_proportion' => (int) $settings['default_lock_proportion'],
             'rounded_corners' => (int) $settings['default_rounded_corners'],
-            'desktop' => max(1, (int) $settings['default_desktop']),
-            'tablet' => max(1, (int) $settings['default_tablet']),
-            'mobile' => max(1, (int) $settings['default_mobile']),
-            'gap' => max(0, (int) $settings['default_gap']),
-            'autoplay' => (int) $settings['default_autoplay'],
-            'autoplay_speed' => max(1000, (int) $settings['default_autoplay_speed']),
-            'arrows' => (int) $settings['default_arrows'],
-            'overlay_opacity' => (string) $settings['default_overlay_opacity'],
-            'show_title' => (int) $settings['default_show_title'],
-            'show_subtitle' => (int) $settings['default_show_subtitle'],
+            'desktop'         => max(1, (int) $settings['default_desktop']),
+            'tablet'          => max(1, (int) $settings['default_tablet']),
+            'mobile'          => max(1, (int) $settings['default_mobile']),
+            'gap'             => max(0, (int) $settings['default_gap']),
+            'autoplay'        => (int) $settings['default_autoplay'],
+            'autoplay_speed'  => max(1000, (int) $settings['default_autoplay_speed']),
+            'arrows'          => (int) $settings['default_arrows'],
             'overlay_enabled' => (int) ($settings['default_overlay_enabled'] ?? 1),
-            'overlay_opacity' => (int) ($settings['default_overlay_opacity'] ?? 42),
+            'overlay_opacity' => max(0, min(100, (int) ($settings['default_overlay_opacity'] ?? 42))),
+            'show_title'      => (int) $settings['default_show_title'],
+            'show_subtitle'   => (int) $settings['default_show_subtitle'],
+            'image_fit'       => 'cover',
+            'card_bg_color'   => '',
+            'card_margin'     => 0,
         );
     }
 
@@ -78,21 +79,24 @@ class MLCP_Helpers {
             }
         }
 
-        $defaults['width_px'] = max(1, (int) $defaults['width_px']);
-        $defaults['height_px'] = max(1, (int) $defaults['height_px']);
+        $defaults['width_px']       = max(1, (int) $defaults['width_px']);
+        $defaults['height_px']      = max(1, (int) $defaults['height_px']);
         $defaults['lock_proportion'] = (int) !empty($defaults['lock_proportion']);
         $defaults['rounded_corners'] = (int) !empty($defaults['rounded_corners']);
-        $defaults['desktop'] = max(1, (int) $defaults['desktop']);
-        $defaults['tablet'] = max(1, (int) $defaults['tablet']);
-        $defaults['mobile'] = max(1, (int) $defaults['mobile']);
-        $defaults['gap'] = max(0, (int) $defaults['gap']);
-        $defaults['autoplay'] = (int) !empty($defaults['autoplay']);
-        $defaults['arrows'] = (int) !empty($defaults['arrows']);
-        $defaults['autoplay_speed'] = max(1000, (int) $defaults['autoplay_speed']);
-        $defaults['show_title'] = (int) !empty($defaults['show_title']);
-        $defaults['show_subtitle'] = (int) !empty($defaults['show_subtitle']);
+        $defaults['desktop']         = max(1, (int) $defaults['desktop']);
+        $defaults['tablet']          = max(1, (int) $defaults['tablet']);
+        $defaults['mobile']          = max(1, (int) $defaults['mobile']);
+        $defaults['gap']             = max(0, (int) $defaults['gap']);
+        $defaults['autoplay']        = (int) !empty($defaults['autoplay']);
+        $defaults['arrows']          = (int) !empty($defaults['arrows']);
+        $defaults['autoplay_speed']  = max(1000, (int) $defaults['autoplay_speed']);
+        $defaults['show_title']      = (int) !empty($defaults['show_title']);
+        $defaults['show_subtitle']   = (int) !empty($defaults['show_subtitle']);
         $defaults['overlay_enabled'] = (int) !empty($defaults['overlay_enabled']);
         $defaults['overlay_opacity'] = max(0, min(100, (int) $defaults['overlay_opacity']));
+        $defaults['image_fit']       = in_array($defaults['image_fit'], array('cover', 'contain'), true) ? $defaults['image_fit'] : 'cover';
+        $defaults['card_bg_color']   = sanitize_hex_color((string) $defaults['card_bg_color']) ?? '';
+        $defaults['card_margin']     = max(0, min(200, (int) $defaults['card_margin']));
 
         return $defaults;
     }
@@ -177,22 +181,24 @@ class MLCP_Helpers {
     }
 
     public static function get_item_meta($post_id) {
-        $date = (string) get_post_meta($post_id, '_mlcp_date', true);
+        $date     = (string) get_post_meta($post_id, '_mlcp_date', true);
         $subtitle = (string) get_post_meta($post_id, '_mlcp_subtitle', true);
         $combined = trim(implode(' • ', array_filter(array($date, $subtitle), static function ($value) {
             return $value !== '';
         })));
 
         return array(
-            'image_id' => (int) get_post_meta($post_id, '_mlcp_image_id', true),
-            'image_url' => (string) get_post_meta($post_id, '_mlcp_image_url', true),
-            'date' => $date,
-            'subtitle' => $subtitle,
+            'image_id'         => (int) get_post_meta($post_id, '_mlcp_image_id', true),
+            'image_url'        => (string) get_post_meta($post_id, '_mlcp_image_url', true),
+            'date'             => $date,
+            'subtitle'         => $subtitle,
             'subtitle_display' => $combined,
-            'link' => (string) get_post_meta($post_id, '_mlcp_link', true),
-            'new_tab' => (int) get_post_meta($post_id, '_mlcp_new_tab', true),
-            'active' => (int) get_post_meta($post_id, '_mlcp_active', true),
-            'expire_at' => (int) get_post_meta($post_id, '_mlcp_expire_at', true),
+            'link'             => (string) get_post_meta($post_id, '_mlcp_link', true),
+            'new_tab'          => (int) get_post_meta($post_id, '_mlcp_new_tab', true),
+            'item_bg_color'    => (string) get_post_meta($post_id, '_mlcp_item_bg_color', true),
+            'item_margin'      => max(0, min(200, (int) get_post_meta($post_id, '_mlcp_item_margin', true))),
+            'active'           => (int) get_post_meta($post_id, '_mlcp_active', true),
+            'expire_at'        => (int) get_post_meta($post_id, '_mlcp_expire_at', true),
         );
     }
 
@@ -254,10 +260,10 @@ class MLCP_Helpers {
             return array('is_plugin' => false, 'active' => '', 'title' => '', 'subtitle' => '');
         }
 
-        $base = (string) $screen->base;
+        $base      = (string) $screen->base;
         $post_type = (string) $screen->post_type;
-        $taxonomy = (string) $screen->taxonomy;
-        $page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+        $taxonomy  = (string) $screen->taxonomy;
+        $page      = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
 
         if ($page === MLCP_MENU_SLUG) {
             return array('is_plugin' => true, 'active' => MLCP_MENU_SLUG, 'title' => 'ML Banner Pro', 'subtitle' => 'Visão geral do produto.');
@@ -293,14 +299,14 @@ class MLCP_Helpers {
     public static function get_item_analytics($post_id) {
         $post_id = (int) $post_id;
         return array(
-            'views' => max(0, (int) get_post_meta($post_id, '_mlcp_views', true)),
-            'clicks' => max(0, (int) get_post_meta($post_id, '_mlcp_clicks', true)),
+            'views'         => max(0, (int) get_post_meta($post_id, '_mlcp_views', true)),
+            'clicks'        => max(0, (int) get_post_meta($post_id, '_mlcp_clicks', true)),
             'last_activity' => max(0, (int) get_post_meta($post_id, '_mlcp_last_activity', true)),
         );
     }
 
     public static function get_item_ctr($views, $clicks) {
-        $views = max(0, (int) $views);
+        $views  = max(0, (int) $views);
         $clicks = max(0, (int) $clicks);
         if ($views <= 0) {
             return '0%';
@@ -311,16 +317,16 @@ class MLCP_Helpers {
 
     public static function get_analytics_summary() {
         $posts = get_posts(array(
-            'post_type' => MLCP_POST_TYPE,
+            'post_type'      => MLCP_POST_TYPE,
             'posts_per_page' => -1,
-            'post_status' => array('publish', 'future', 'draft', 'pending', 'private'),
-            'fields' => 'ids',
+            'post_status'    => array('publish', 'future', 'draft', 'pending', 'private'),
+            'fields'         => 'ids',
         ));
 
         $summary = array('views' => 0, 'clicks' => 0, 'items' => 0);
         foreach ($posts as $post_id) {
-            $analytics = self::get_item_analytics($post_id);
-            $summary['views'] += (int) $analytics['views'];
+            $analytics         = self::get_item_analytics($post_id);
+            $summary['views']  += (int) $analytics['views'];
             $summary['clicks'] += (int) $analytics['clicks'];
             $summary['items']++;
         }
@@ -330,7 +336,7 @@ class MLCP_Helpers {
 
     public static function increment_analytics($post_id, $event) {
         $post_id = (int) $post_id;
-        $event = sanitize_key((string) $event);
+        $event   = sanitize_key((string) $event);
 
         if ($post_id <= 0 || !in_array($event, array('view', 'click'), true)) {
             return false;
@@ -340,7 +346,7 @@ class MLCP_Helpers {
             return false;
         }
 
-        $key = $event === 'click' ? '_mlcp_clicks' : '_mlcp_views';
+        $key     = $event === 'click' ? '_mlcp_clicks' : '_mlcp_views';
         $current = max(0, (int) get_post_meta($post_id, $key, true));
         update_post_meta($post_id, $key, $current + 1);
         update_post_meta($post_id, '_mlcp_last_activity', current_time('timestamp', true));
@@ -357,10 +363,10 @@ class MLCP_Helpers {
         }
 
         $posts = get_posts(array(
-            'post_type' => MLCP_POST_TYPE,
+            'post_type'      => MLCP_POST_TYPE,
             'posts_per_page' => -1,
-            'post_status' => 'any',
-            'fields' => 'ids',
+            'post_status'    => 'any',
+            'fields'         => 'ids',
         ));
 
         foreach ($posts as $item_id) {
@@ -372,32 +378,19 @@ class MLCP_Helpers {
 
     /**
      * One-time migration: copy legacy wp_options analytics into post_meta.
-     *
-     * Legacy builds stored: mlcp_analytics (or ml_banner_analytics)
-     *   schema: array( $post_id => array('views'=>int, 'clicks'=>int, 'last'=>int) )
-     *
-     * Current build stores per-item post_meta:
-     *   _mlcp_views | _mlcp_clicks | _mlcp_last_activity
-     *
-     * Safe rules:
-     *  - Runs only once (guarded by mlcp_migrated_v108)
-     *  - Never deletes source options
-     *  - Uses max() — never overwrites a higher existing value
-     *  - Skips posts that are not MLCP_POST_TYPE
+     * Guarded by mlcp_migrated_v108 option — runs only once.
      */
     public static function migrate_legacy_analytics() {
         if ( get_option( 'mlcp_migrated_v108' ) ) {
             return;
         }
 
-        // Read from both possible legacy keys; mlcp_analytics takes priority
-        $src_a = get_option( 'mlcp_analytics',      array() );
+        $src_a = get_option( 'mlcp_analytics',     array() );
         $src_b = get_option( 'ml_banner_analytics', array() );
 
         $src_a = is_array( $src_a ) ? $src_a : array();
         $src_b = is_array( $src_b ) ? $src_b : array();
 
-        // b is base, a overrides on conflict
         $merged = array_merge( $src_b, $src_a );
 
         foreach ( $merged as $post_id => $data ) {
@@ -415,7 +408,6 @@ class MLCP_Helpers {
             $leg_clicks = max( 0, (int) ( $data['clicks'] ?? 0 ) );
             $leg_last   = max( 0, (int) ( $data['last']   ?? 0 ) );
 
-            // Current values already stored in post_meta (may be 0 or higher)
             $cur_views  = max( 0, (int) get_post_meta( $post_id, '_mlcp_views',         true ) );
             $cur_clicks = max( 0, (int) get_post_meta( $post_id, '_mlcp_clicks',        true ) );
             $cur_last   = max( 0, (int) get_post_meta( $post_id, '_mlcp_last_activity', true ) );
@@ -424,7 +416,6 @@ class MLCP_Helpers {
             $new_clicks = max( $cur_clicks, $leg_clicks );
             $new_last   = max( $cur_last,   $leg_last   );
 
-            // Only write if there is something to add
             if ( $new_views > $cur_views ) {
                 update_post_meta( $post_id, '_mlcp_views', $new_views );
             }
@@ -436,7 +427,6 @@ class MLCP_Helpers {
             }
         }
 
-        // Mark done — source options intentionally preserved
         update_option( 'mlcp_migrated_v108', 1, false );
     }
 

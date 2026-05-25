@@ -43,7 +43,7 @@ class MLCP_Taxonomies {
             return;
         }
 
-        $fields = array('width_px', 'height_px', 'lock_proportion', 'rounded_corners', 'desktop', 'tablet', 'mobile', 'gap', 'autoplay', 'autoplay_speed', 'arrows', 'overlay_enabled', 'overlay_opacity', 'show_title', 'show_subtitle');
+        $fields = array('width_px', 'height_px', 'lock_proportion', 'rounded_corners', 'desktop', 'tablet', 'mobile', 'gap', 'autoplay', 'autoplay_speed', 'arrows', 'overlay_enabled', 'overlay_opacity', 'show_title', 'show_subtitle', 'image_fit', 'card_bg_color', 'card_margin');
         foreach ($fields as $field) {
             $value = isset($_POST['mlcp_' . $field]) ? wp_unslash($_POST['mlcp_' . $field]) : '';
             switch ($field) {
@@ -67,6 +67,15 @@ class MLCP_Taxonomies {
                     break;
                 case 'overlay_opacity':
                     $value = max(0, min(100, (int) $value));
+                    break;
+                case 'image_fit':
+                    $value = in_array($value, array('cover', 'contain'), true) ? $value : 'cover';
+                    break;
+                case 'card_bg_color':
+                    $value = sanitize_hex_color($value) ?? '';
+                    break;
+                case 'card_margin':
+                    $value = max(0, min(200, (int) $value));
                     break;
                 default:
                     $value = sanitize_text_field($value);

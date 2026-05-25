@@ -147,3 +147,11 @@ jQuery(function($){
     });
   });
 });
+
+
+// Color picker init
+jQuery(function($){
+    if ($.fn.wpColorPicker) {
+        $('.mlcp-color-picker').wpColorPicker();
+    }
+});
