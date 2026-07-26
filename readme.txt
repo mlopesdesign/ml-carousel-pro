@@ -4,7 +4,7 @@ Tags: carousel, banner, slider, shortcode, groups
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.10.19
+Stable tag: 1.11.12
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -45,6 +45,14 @@ Sim. Cada grupo tem suas próprias configurações de layout, dimensões, autopl
 No modo Contain, a imagem é exibida inteira sem corte, ideal para logos ou imagens com proporções variadas.
 
 == Changelog ==
+
+= 1.11.12 =
+* Alterado (identidade visual): o painel passa a usar exclusivamente a paleta ML Lopes Design. A pílula da versão era `#eef2ff` / `#1d4ed8` e o badge azul `#eff6ff` / `#c9daf8` / `#245ba8`; ambos migraram para `--mlcp-accent-soft` e `--mlcp-accent`.
+* Corrigido: o azul padrão do WordPress vazava nos botões primários, porque o CSS não sobrescrevia `.button-primary`. Agora `.button-primary` e `.button-secondary` são sobrescritos dentro de `.mlcp-wrap`.
+* Alterado: os badges de status "pendente" (azul) e "agendado" (roxo) passaram para tons da paleta. Verde, amarelo e vermelho foram mantidos por serem semântica universal de publicado, privado e perigo.
+* Limpeza: tons quase duplicados consolidados nos tokens existentes — `#cad9de` e `#d9e7ea` para `--mlcp-border`, `#fbfefe` para `#f6fafb`, `#eef5f7` para `--mlcp-accent-soft`.
+* Nenhuma alteração estrutural: apenas valores de cor. Contagem de regras CSS e layout preservados.
+* Sincronizado: o cabeçalho do plugin e a `MLCP_VERSION` estavam em 1.10.19 enquanto a release publicada era a v1.11.11. Agora cabeçalho, constante, Stable tag e tag do git apontam para a mesma versão.
 
 = 1.10.16 =
 * Adicionado: GitHub Updater — atualizações automáticas via WordPress admin a partir de GitHub Releases
