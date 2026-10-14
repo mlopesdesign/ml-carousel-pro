@@ -3,6 +3,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if ( class_exists( 'MLCP_Install' ) ) { return; }
+
 class MLCP_Install {
     public static function activate() {
         MLCP_Post_Types::register();

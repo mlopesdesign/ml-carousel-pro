@@ -3,6 +3,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if ( class_exists( 'MLCP_Taxonomies' ) ) { return; }
+
 class MLCP_Taxonomies {
     public static function register() {
         register_taxonomy(MLCP_GROUP_TAX, array(MLCP_POST_TYPE), array(

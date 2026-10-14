@@ -3,6 +3,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if ( class_exists( 'MLCP_Meta_Boxes' ) ) { return; }
+
 class MLCP_Meta_Boxes {
     public static function register() {
         add_meta_box('mlcp_item_details', __('Detalhes do item', MLCP_TEXT_DOMAIN), array(__CLASS__, 'render'), MLCP_POST_TYPE, 'normal', 'high');
@@ -35,7 +37,7 @@ class MLCP_Meta_Boxes {
         echo '<div class="mlcp-field mlcp-field-side">';
         echo '<label for="mlcp_expire_at">Expiracao do item</label>';
         echo '<input type="datetime-local" name="mlcp_expire_at" id="mlcp_expire_at" value="' . esc_attr(MLCP_Helpers::format_local_datetime($meta['expire_at'])) . '" />';
-        echo '<p class="description">Quando chegar esse dia e hora, o item vai para rascunho no horario do site.</p>';
+        echo '<p class="description">Quando chegar esse dia e hora, o item vai para a Lixeira e poderá ser restaurado ou excluído definitivamente.</p>';
         echo '</div>';
 
         echo '<div class="mlcp-field mlcp-field-side">';
@@ -71,6 +73,14 @@ class MLCP_Meta_Boxes {
 
         $expire_input = isset($_POST['mlcp_expire_at']) ? sanitize_text_field(wp_unslash($_POST['mlcp_expire_at'])) : '';
         $expire_at = MLCP_Helpers::parse_local_datetime($expire_input);
+
+        // If the expiration date is already in the past, do not force the item back to draft
+        // during the same save/publish action. Clear the expired schedule value and let the
+        // editor publish normally. Future dates keep the expiration workflow intact.
+        if ($expire_at > 0 && $expire_at <= current_time('timestamp', true)) {
+            $expire_at = 0;
+        }
+
         $fields['_mlcp_expire_at'] = $expire_at;
 
         foreach ($fields as $key => $value) {
@@ -111,6 +121,31 @@ class MLCP_Meta_Boxes {
         wp_clear_scheduled_hook(MLCP_EXPIRATION_HOOK, array((int) $post_id));
     }
 
+    public static function migrate_expired_drafts_to_trash() {
+        if (get_option('mlcp_expired_drafts_migrated_1_11_14')) {
+            return;
+        }
+
+        $ids = get_posts(array(
+            'post_type'      => MLCP_POST_TYPE,
+            'post_status'    => 'draft',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'meta_query'     => array(array(
+                'key'     => '_mlcp_expire_at',
+                'value'   => current_time('timestamp', true),
+                'compare' => '<=',
+                'type'    => 'NUMERIC',
+            )),
+        ));
+
+        foreach ($ids as $post_id) {
+            wp_trash_post((int) $post_id);
+        }
+
+        update_option('mlcp_expired_drafts_migrated_1_11_14', 1, false);
+    }
+
     public static function expire_item($post_id) {
         $post_id = (int) $post_id;
         if (!$post_id || get_post_type($post_id) !== MLCP_POST_TYPE) {
@@ -118,15 +153,12 @@ class MLCP_Meta_Boxes {
         }
 
         $post = get_post($post_id);
-        if (!$post || $post->post_status === 'draft') {
+        if (!$post || in_array($post->post_status, array('trash', 'auto-draft'), true)) {
             return;
         }
 
         remove_action('save_post_' . MLCP_POST_TYPE, array(__CLASS__, 'save'), 10);
-        wp_update_post(array(
-            'ID' => $post_id,
-            'post_status' => 'draft',
-        ));
+        wp_trash_post($post_id);
         add_action('save_post_' . MLCP_POST_TYPE, array(__CLASS__, 'save'), 10, 2);
     }
 }

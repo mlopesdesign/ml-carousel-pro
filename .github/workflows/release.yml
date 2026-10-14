@@ -22,18 +22,32 @@ jobs:
 
       - name: Build plugin ZIP
         run: |
+          # O plugin fica na RAIZ do repositorio; o ZIP leva a pasta ml-carousel-pro/.
           mkdir -p dist/ml-carousel-pro
-          rsync -av \
+          rsync -a \
             --exclude='.git' \
             --exclude='.github' \
             --exclude='.distignore' \
+            --exclude='.gitignore' \
+            --exclude='.gitattributes' \
             --exclude='*.zip' \
             --exclude='node_modules' \
             --exclude='tests' \
             --exclude='dist' \
-            ml-carousel-pro/ dist/ml-carousel-pro/
+            ./ dist/ml-carousel-pro/
+          test -f dist/ml-carousel-pro/ml-carousel-pro.php
+          test -f dist/ml-carousel-pro/uninstall.php
+          test -f dist/ml-carousel-pro/assets/images/icon-256x256.png
+          grep -q "define('MLCP_VERSION',       '${{ steps.version.outputs.VERSION }}')" dist/ml-carousel-pro/ml-carousel-pro.php
+          grep -q "Stable tag: ${{ steps.version.outputs.VERSION }}" dist/ml-carousel-pro/readme.txt
+          header=$(grep -E '^\s*\*\s*Version:' dist/ml-carousel-pro/ml-carousel-pro.php | head -1 | sed -E 's/.*Version:\s*([0-9.]+).*/\1/')
+          if [ "$header" != "${{ steps.version.outputs.VERSION }}" ]; then
+            echo "Tag ${{ steps.version.outputs.VERSION }} difere do Version: $header"; exit 1
+          fi
+          find dist/ml-carousel-pro -type d -exec chmod 755 {} +
+          find dist/ml-carousel-pro -type f -exec chmod 644 {} +
           cd dist
-          zip -r ../ml-carousel-pro-v${{ steps.version.outputs.VERSION }}.zip ml-carousel-pro/
+          zip -qrX ../ml-carousel-pro-v${{ steps.version.outputs.VERSION }}.zip ml-carousel-pro/
           cd ..
           echo "ZIP created:"
           unzip -l ml-carousel-pro-v${{ steps.version.outputs.VERSION }}.zip | head -5

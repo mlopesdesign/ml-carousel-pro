@@ -3,6 +3,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if ( class_exists( 'MLCP_Assets' ) ) { return; }
+
 class MLCP_Assets {
     public static function enqueue_admin($hook) {
         $allowed = array(
@@ -11,11 +13,14 @@ class MLCP_Assets {
             'ml-carousel-pro_page_mlcp-settings',
             'ml-carousel-pro_page_mlcp-license',
             'ml-carousel-pro_page_mlcp-analytics',
+            // WordPress derives submenu hook prefixes from the visible top-level menu title.
+            // Keep these as admin-screen compatibility only; they are not technical slug changes.
             'ml-banner-pro_page_mlcp-shortcodes',
             'ml-banner-pro_page_mlcp-settings',
             'ml-banner-pro_page_mlcp-license',
             'ml-banner-pro_page_mlcp-analytics',
             'ml-banner-pro_page_mlcp-sort',
+
             'mlcp-dashboard_page_mlcp-shortcodes',
             'mlcp-dashboard_page_mlcp-settings',
             'mlcp-dashboard_page_mlcp-license',
@@ -27,10 +32,20 @@ class MLCP_Assets {
             'post-new.php',
             'edit.php',
         );
+
         $screen = function_exists('get_current_screen') ? get_current_screen() : null;
-        if (!$screen) { return; }
-        $is_plugin_screen = in_array($hook, $allowed, true) || $screen->post_type === MLCP_POST_TYPE || $screen->taxonomy === MLCP_GROUP_TAX;
-        if (!$is_plugin_screen) { return; }
+        if (!$screen) {
+            return;
+        }
+
+        $is_plugin_screen = in_array($hook, $allowed, true)
+            || $screen->post_type === MLCP_POST_TYPE
+            || $screen->taxonomy === MLCP_GROUP_TAX;
+
+        if (!$is_plugin_screen) {
+            return;
+        }
+
         wp_enqueue_media();
         wp_enqueue_style('wp-color-picker');
         wp_enqueue_style('mlcp-admin', MLCP_PLUGIN_URL . 'assets/css/admin.css', array('wp-color-picker'), MLCP_VERSION);
@@ -46,6 +61,7 @@ class MLCP_Assets {
             'saveError' => __('Não foi possível salvar a ordenação.', MLCP_TEXT_DOMAIN),
         ));
     }
+
     public static function enqueue_front() {
         wp_register_style('mlcp-front', MLCP_PLUGIN_URL . 'assets/css/front.css', array(), MLCP_VERSION);
         wp_register_script('mlcp-front', MLCP_PLUGIN_URL . 'assets/js/front.js', array(), MLCP_VERSION, true);

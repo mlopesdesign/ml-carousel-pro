@@ -3,31 +3,56 @@
  * Plugin Name:       ML Banner Pro
  * Plugin URI:        https://mlopesdesign.com.br
  * Description:       Carrossel profissional com grupos, múltiplos shortcodes, ordenação administrativa, autoplay, analytics e integração segura com templates como Nicepage.
- * Version:           1.11.12
+ * Version:           1.12.6
  * Requires at least: 6.0
  * Requires PHP:      7.4
- * Tested up to:      6.7
+ * Tested up to:      6.8
  * Author:            Marcio Lopes
  * Author URI:        https://mlopesdesign.com.br
  * License:           GPLv2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       ml-carousel-pro
+ * Update URI:        https://github.com/mlopesdesign/ml-carousel-pro-releases
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-define('MLCP_VERSION', '1.11.12');
-define('MLCP_PLUGIN_FILE', __FILE__);
-define('MLCP_PLUGIN_DIR', plugin_dir_path(__FILE__));
-define('MLCP_PLUGIN_URL', plugin_dir_url(__FILE__));
-define('MLCP_TEXT_DOMAIN', 'ml-carousel-pro');
-define('MLCP_POST_TYPE', 'mlcp_item');
-define('MLCP_GROUP_TAX', 'mlcp_group');
-define('MLCP_MENU_SLUG', 'mlcp-dashboard');
+if (!function_exists('mlcp_consolidate_active_installation')) {
+    function mlcp_consolidate_active_installation() {
+        $current = plugin_basename(__FILE__);
+        $active  = (array) get_option('active_plugins', array());
+
+        foreach ($active as $plugin) {
+            if ($plugin === $current) {
+                continue;
+            }
+            if (basename($plugin) === 'ml-carousel-pro.php') {
+                deactivate_plugins($plugin, true);
+            }
+        }
+    }
+}
+
+register_activation_hook(__FILE__, 'mlcp_consolidate_active_installation');
+
+// Guard against redeclaration conflicts with other ML plugins
+if ( defined( 'MLCP_VERSION' ) ) {
+    return; // Another ML plugin with same prefix is already loaded — abort silently
+}
+
+define('MLCP_VERSION',       '1.12.6');
+define('MLCP_BASENAME',      plugin_basename( __FILE__ ) );
+define('MLCP_PLUGIN_DIR',    plugin_dir_path(__FILE__));
+define('MLCP_PLUGIN_URL',    plugin_dir_url(__FILE__));
+define('MLCP_TEXT_DOMAIN',   'ml-carousel-pro');
+define('MLCP_POST_TYPE',     'mlcp_item');
+define('MLCP_GROUP_TAX',     'mlcp_group');
+define('MLCP_MENU_SLUG',     'mlcp-dashboard');
 define('MLCP_EXPIRATION_HOOK', 'mlcp_expire_item');
 
+require_once MLCP_PLUGIN_DIR . 'includes/class-mlcp-analytics-service.php';
 require_once MLCP_PLUGIN_DIR . 'includes/class-mlcp-helpers.php';
 require_once MLCP_PLUGIN_DIR . 'includes/class-mlcp-install.php';
 require_once MLCP_PLUGIN_DIR . 'includes/class-mlcp-post-types.php';
@@ -57,9 +82,10 @@ final class ML_Carousel_Pro {
         add_action(MLCP_EXPIRATION_HOOK, array('MLCP_Meta_Boxes', 'expire_item'));
         add_action('before_delete_post', array('MLCP_Meta_Boxes', 'clear_expiration_schedule'));
         add_action('trashed_post', array('MLCP_Meta_Boxes', 'clear_expiration_schedule'));
+        add_action('admin_init', array('MLCP_Meta_Boxes', 'migrate_expired_drafts_to_trash'));
         add_filter('manage_edit-' . MLCP_POST_TYPE . '_columns', array('MLCP_Admin', 'item_columns'));
         add_action('manage_' . MLCP_POST_TYPE . '_posts_custom_column', array('MLCP_Admin', 'render_item_columns'), 10, 2);
-        add_filter('manage_edit-' . MLCP_POST_TYPE . '_sortable_columns', array('MLCP_Admin', 'sortable_item_columns'));
+        add_filter('views_edit-' . MLCP_POST_TYPE, array('MLCP_Admin', 'always_show_trash_view'));
         add_filter('post_row_actions', array('MLCP_Admin', 'duplicate_row_action'), 10, 2);
         add_action('pre_get_posts', array('MLCP_Admin', 'handle_admin_query'));
         add_filter('manage_edit-' . MLCP_GROUP_TAX . '_columns', array('MLCP_Admin', 'group_columns'));
@@ -72,8 +98,10 @@ final class ML_Carousel_Pro {
 
         add_action('admin_post_mlcp_save_settings', array('MLCP_Admin', 'save_settings'));
         add_action('admin_post_mlcp_duplicate_item', array('MLCP_Admin', 'handle_duplicate_item'));
+        add_action('admin_post_mlcp_move_item', array('MLCP_Admin', 'handle_move_item'));
         add_action('wp_ajax_mlcp_load_sort_group', array('MLCP_Admin', 'ajax_load_sort_group'));
         add_action('wp_ajax_mlcp_save_sort_group', array('MLCP_Admin', 'ajax_save_sort_group'));
+        add_action('wp_ajax_mlcp_save_items_order', array('MLCP_Admin', 'ajax_save_items_order'));
         add_action('all_admin_notices', array('MLCP_Admin', 'render_shared_admin_header'));
         add_action('admin_post_mlcp_activate_license', array('MLCP_Admin', 'handle_activate_license'));
         add_action('admin_post_mlcp_sync_license', array('MLCP_Admin', 'handle_sync_license'));
@@ -81,10 +109,18 @@ final class ML_Carousel_Pro {
         add_action('admin_post_mlcp_reset_analytics', array('MLCP_Admin', 'handle_reset_analytics'));
         add_action('wp_ajax_mlcp_track_event', array('MLCP_Admin', 'ajax_track_event'));
         add_action('wp_ajax_nopriv_mlcp_track_event', array('MLCP_Admin', 'ajax_track_event'));
-        add_action('init', array('MLCP_Helpers', 'migrate_legacy_analytics'));
+        add_action('init', array('MLCP_Analytics_Service', 'maybe_migrate_legacy'));
 
         add_shortcode('ml_carousel', array('MLCP_Shortcodes', 'render'));
-        add_action('admin_init', array('MLCP_GitHub_Updater', 'init'));
+
+        // GitHub Updater — single update engine only.
+        // Register immediately during plugin bootstrap so WordPress update checks
+        // on Plugins/Updates screens do not run before our filters exist.
+        // Painel, WP-Cron e WP-CLI (o init() decide); antes so no painel, e a atualizacao
+        // automatica do WP (que roda no cron) nunca via a versao nova.
+        if ( class_exists( 'MLCP_GitHub_Updater' ) ) {
+            MLCP_GitHub_Updater::init();
+        }
     }
 }
 

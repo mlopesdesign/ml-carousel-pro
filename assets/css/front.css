@@ -1,37 +1,48 @@
-.mlcp-carousel{position:relative;width:var(--mlcp-width,100%);max-width:100%;margin:0 auto}
-.mlcp-viewport{overflow:hidden;width:100%;max-width:100%}
-.mlcp-track{display:flex;gap:var(--mlcp-gap,18px);transition:transform .45s ease;will-change:transform;width:max-content;max-width:none}
-.mlcp-card{flex:0 0 var(--mlcp-card-width,320px);width:var(--mlcp-card-width,320px);min-width:var(--mlcp-card-width,320px);max-width:100%}
-.mlcp-link{text-decoration:none;display:block;width:100%;max-width:100%}
+/* ML Banner Pro — front.css
+   Uses !important on structural properties to resist theme overrides.
+   Decorative properties (colors, radius, fonts) do NOT use !important
+   so themes can still customize visuals.
+*/
+
+.mlcp-carousel{position:relative !important;width:var(--mlcp-width,100%);max-width:100%;margin:0 auto}
+.mlcp-viewport{overflow:hidden !important;width:100% !important;max-width:100% !important;display:block !important}
+.mlcp-track{display:flex !important;flex-wrap:nowrap !important;gap:var(--mlcp-gap,18px);transition:transform .45s ease !important;will-change:transform;width:max-content !important;max-width:none !important;list-style:none !important;margin:0 !important;padding:0 !important}
+.mlcp-card{flex:0 0 var(--mlcp-card-width,320px) !important;width:var(--mlcp-card-width,320px) !important;min-width:var(--mlcp-card-width,320px) !important;max-width:100%;box-sizing:border-box !important}
+.mlcp-link{text-decoration:none;display:block !important;width:100% !important;max-width:100%}
 .mlcp-link--lightbox{cursor:pointer;outline:none}
 .mlcp-link--lightbox:focus-visible .mlcp-image-wrap{outline:3px solid #fff;outline-offset:2px}
-.mlcp-image-wrap{position:relative;height:var(--mlcp-height-px,var(--mlcp-height,320px));border-radius:var(--mlcp-radius,18px);overflow:hidden;background:var(--mlcp-card-bg,transparent);max-width:100%;padding:var(--mlcp-card-margin,0px)}
-.mlcp-carousel[data-lock-proportion="1"] .mlcp-image-wrap{height:auto;aspect-ratio:var(--mlcp-ratio,16 / 9)}
-.mlcp-image-wrap img{width:100%;height:100%;object-fit:var(--mlcp-image-fit,cover);display:block;transform:scale(1);transition:transform .45s ease;max-width:100%}
+.mlcp-image-wrap{position:relative !important;height:var(--mlcp-height-px,var(--mlcp-height,320px));border-radius:var(--mlcp-radius,18px);overflow:hidden !important;background:var(--mlcp-card-bg,transparent);max-width:100%;padding:var(--mlcp-card-margin,0px);box-sizing:border-box !important}
+.mlcp-carousel[data-lock-proportion="1"] .mlcp-image-wrap{height:auto !important;aspect-ratio:var(--mlcp-ratio,16 / 9)}
+.mlcp-image-wrap img{width:100% !important;height:100% !important;object-fit:var(--mlcp-image-fit,cover) !important;display:block !important;transform:scale(1);transition:transform .45s ease;max-width:100% !important}
 .mlcp-link:hover .mlcp-image-wrap img{transform:scale(1.04)}
-.mlcp-overlay{position:absolute;inset:0;background:linear-gradient(to top, rgba(0,0,0,.86) 0%, rgba(0,0,0,var(--mlcp-overlay,.42)) 55%, rgba(0,0,0,.08) 100%)}
-.mlcp-caption{position:absolute;left:0;right:0;bottom:0;padding:22px;color:#fff;text-align:center;z-index:2}
+.mlcp-overlay{position:absolute !important;inset:0;background:linear-gradient(to top, rgba(0,0,0,.86) 0%, rgba(0,0,0,var(--mlcp-overlay,.42)) 55%, rgba(0,0,0,.08) 100%)}
+.mlcp-caption{position:absolute !important;left:0;right:0;bottom:0;padding:22px;color:#fff;text-align:center;z-index:2}
 .mlcp-caption h3{margin:0;font-size:22px;line-height:1.15;font-weight:700}
 .mlcp-caption p{margin:8px 0 0;font-size:16px;line-height:1.2;opacity:.95}
-.mlcp-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:44px;height:44px;border-radius:999px;border:0;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.mlcp-prev{left:12px}
-.mlcp-next{right:12px}
+
+/* Nav buttons — z-index and pointer-events !important prevent theme interference */
+.mlcp-nav{position:absolute !important;top:50% !important;transform:translateY(-50%) !important;z-index:10 !important;width:44px !important;height:44px !important;border-radius:999px !important;border:0 !important;background:rgba(0,0,0,.6) !important;color:#fff !important;cursor:pointer !important;display:flex !important;align-items:center !important;justify-content:center !important;pointer-events:auto !important;opacity:1 !important;visibility:visible !important;box-shadow:none !important;outline:none}
+.mlcp-nav:hover{background:rgba(0,0,0,.85) !important}
+.mlcp-nav:focus-visible{outline:2px solid #fff !important;outline-offset:2px !important}
+.mlcp-prev{left:12px !important;right:auto !important}
+.mlcp-next{right:12px !important;left:auto !important}
+
 @media (max-width: 980px){
-  .mlcp-card{flex:0 0 calc((100% - (var(--mlcp-gap,18px) * (var(--mlcp-tablet,2) - 1))) / var(--mlcp-tablet,2));width:calc((100% - (var(--mlcp-gap,18px) * (var(--mlcp-tablet,2) - 1))) / var(--mlcp-tablet,2));min-width:calc((100% - (var(--mlcp-gap,18px) * (var(--mlcp-tablet,2) - 1))) / var(--mlcp-tablet,2))}
+  .mlcp-card{flex:0 0 calc((100% - (var(--mlcp-gap,18px) * (var(--mlcp-tablet,2) - 1))) / var(--mlcp-tablet,2)) !important;width:calc((100% - (var(--mlcp-gap,18px) * (var(--mlcp-tablet,2) - 1))) / var(--mlcp-tablet,2)) !important;min-width:calc((100% - (var(--mlcp-gap,18px) * (var(--mlcp-tablet,2) - 1))) / var(--mlcp-tablet,2)) !important}
 }
 @media (max-width: 640px){
-  .mlcp-carousel{width:100%;max-width:100%}
-  .mlcp-viewport{padding:0;max-width:100%}
-  .mlcp-track{gap:var(--mlcp-mobile-gap,12px)}
-  .mlcp-card{flex:0 0 var(--mlcp-mobile-card-width,min(100%, var(--mlcp-card-width,320px)));width:var(--mlcp-mobile-card-width,min(100%, var(--mlcp-card-width,320px)));min-width:var(--mlcp-mobile-card-width,min(100%, var(--mlcp-card-width,320px)));max-width:100%}
-  .mlcp-image-wrap{width:100%;height:auto;aspect-ratio:var(--mlcp-ratio,16 / 9);max-height:none}
-  .mlcp-carousel[data-lock-proportion="1"] .mlcp-image-wrap{height:auto;aspect-ratio:var(--mlcp-ratio,16 / 9)}
+  .mlcp-carousel{width:100% !important;max-width:100% !important}
+  .mlcp-viewport{padding:0 !important;max-width:100% !important}
+  .mlcp-track{gap:var(--mlcp-mobile-gap,12px) !important}
+  .mlcp-card{flex:0 0 var(--mlcp-mobile-card-width,min(100%, var(--mlcp-card-width,320px))) !important;width:var(--mlcp-mobile-card-width,min(100%, var(--mlcp-card-width,320px))) !important;min-width:var(--mlcp-mobile-card-width,min(100%, var(--mlcp-card-width,320px))) !important;max-width:100% !important}
+  .mlcp-image-wrap{width:100% !important;height:auto !important;aspect-ratio:var(--mlcp-ratio,16 / 9);max-height:none !important}
+  .mlcp-carousel[data-lock-proportion="1"] .mlcp-image-wrap{height:auto !important;aspect-ratio:var(--mlcp-ratio,16 / 9)}
   .mlcp-caption{padding:16px}
   .mlcp-caption h3{font-size:19px}
   .mlcp-caption p{font-size:14px}
-  .mlcp-nav{width:32px;height:32px}
-  .mlcp-prev{left:8px}
-  .mlcp-next{right:8px}
+  .mlcp-nav{width:32px !important;height:32px !important}
+  .mlcp-prev{left:8px !important}
+  .mlcp-next{right:8px !important}
 }
 .mlcp-carousel[data-rounded-corners="0"]{--mlcp-radius:0px}
 
@@ -40,15 +51,15 @@
    ============================================= */
 #mlcp-lb-overlay{
   display:none;
-  position:fixed;
+  position:fixed !important;
   inset:0;
-  z-index:999999;
+  z-index:999999 !important;
   background:rgba(0,0,0,.88);
   align-items:center;
   justify-content:center;
 }
 #mlcp-lb-overlay.mlcp-lb-open{
-  display:flex;
+  display:flex !important;
 }
 #mlcp-lb-inner{
   position:relative;
@@ -69,10 +80,10 @@
   box-shadow:0 8px 48px rgba(0,0,0,.7);
 }
 #mlcp-lb-close{
-  position:fixed;
+  position:fixed !important;
   top:18px;
   right:22px;
-  z-index:1000000;
+  z-index:1000000 !important;
   background:rgba(0,0,0,.65);
   color:#fff;
   border:none;

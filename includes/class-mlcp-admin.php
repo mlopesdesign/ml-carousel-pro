@@ -3,6 +3,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if ( class_exists( 'MLCP_Admin' ) ) { return; }
+
 class MLCP_Admin {
     public static function register_menu() {
         add_menu_page(
@@ -16,9 +18,8 @@ class MLCP_Admin {
         );
 
         add_submenu_page(MLCP_MENU_SLUG, __('Dashboard', MLCP_TEXT_DOMAIN), __('Dashboard', MLCP_TEXT_DOMAIN), 'manage_options', MLCP_MENU_SLUG, array(__CLASS__, 'render_dashboard'));
-        add_submenu_page(MLCP_MENU_SLUG, __('Itens', MLCP_TEXT_DOMAIN), __('Itens', MLCP_TEXT_DOMAIN), 'edit_posts', 'edit.php?post_type=' . MLCP_POST_TYPE);
+        add_submenu_page(MLCP_MENU_SLUG, __('Itens', MLCP_TEXT_DOMAIN), __('Itens', MLCP_TEXT_DOMAIN), 'edit_posts', 'edit.php?post_type=' . MLCP_POST_TYPE . '&post_status=publish');
         add_submenu_page(MLCP_MENU_SLUG, __('Grupos', MLCP_TEXT_DOMAIN), __('Grupos', MLCP_TEXT_DOMAIN), 'manage_categories', 'edit-tags.php?taxonomy=' . MLCP_GROUP_TAX . '&post_type=' . MLCP_POST_TYPE);
-        add_submenu_page(MLCP_MENU_SLUG, __('Ordenação', MLCP_TEXT_DOMAIN), __('Ordenação', MLCP_TEXT_DOMAIN), 'edit_posts', 'mlcp-sort', array(__CLASS__, 'render_sort'));
         add_submenu_page(MLCP_MENU_SLUG, __('Shortcodes', MLCP_TEXT_DOMAIN), __('Shortcodes', MLCP_TEXT_DOMAIN), 'manage_options', 'mlcp-shortcodes', array(__CLASS__, 'render_shortcodes'));
         add_submenu_page(MLCP_MENU_SLUG, __('Configurações', MLCP_TEXT_DOMAIN), __('Configurações', MLCP_TEXT_DOMAIN), 'manage_options', 'mlcp-settings', array(__CLASS__, 'render_settings'));
         add_submenu_page(MLCP_MENU_SLUG, __('Licença e Planos', MLCP_TEXT_DOMAIN), __('Licença e Planos', MLCP_TEXT_DOMAIN), 'manage_options', 'mlcp-license', array(__CLASS__, 'render_license'));
@@ -58,7 +59,7 @@ class MLCP_Admin {
     }
 
     public static function render_analytics() {
-        $summary = MLCP_Helpers::get_analytics_summary();
+        $summary = MLCP_Analytics_Service::get_summary();
         $items   = get_posts(array(
             'post_type'      => MLCP_POST_TYPE,
             'posts_per_page' => -1,
@@ -166,7 +167,14 @@ class MLCP_Admin {
             }
         } elseif ($column === 'mlcp_order') {
             $post = get_post($post_id);
-            echo (int) $post->menu_order;
+            if (!$post || $post->post_status !== 'publish') {
+                echo '&mdash;';
+                return;
+            }
+
+            echo '<div class="mlcp-order-control">';
+            echo '<span class="mlcp-order-position">' . esc_html((string) ((int) $post->menu_order + 1)) . '</span>';
+            echo '</div>';
         } elseif ($column === 'mlcp_active') {
             echo !empty($meta['active']) ? esc_html__('Sim', MLCP_TEXT_DOMAIN) : esc_html__('Não', MLCP_TEXT_DOMAIN);
         } elseif ($column === 'mlcp_expire') {
@@ -262,9 +270,79 @@ class MLCP_Admin {
         exit;
     }
 
-    public static function sortable_item_columns($columns) {
-        $columns['mlcp_order'] = 'menu_order';
-        return $columns;
+    public static function handle_move_item() {
+        $post_id   = isset($_GET['post']) ? (int) $_GET['post'] : 0;
+        $direction = isset($_GET['direction']) ? sanitize_key(wp_unslash($_GET['direction'])) : '';
+
+        if (!$post_id || !in_array($direction, array('up', 'down'), true)) {
+            wp_die(esc_html__('Movimentação inválida.', MLCP_TEXT_DOMAIN));
+        }
+
+        if (!current_user_can('edit_post', $post_id)) {
+            wp_die(esc_html__('Acesso negado.', MLCP_TEXT_DOMAIN));
+        }
+
+        check_admin_referer('mlcp_move_item_' . $post_id);
+
+        $post = get_post($post_id);
+        if (!$post || $post->post_type !== MLCP_POST_TYPE || $post->post_status !== 'publish') {
+            wp_die(esc_html__('Item inválido.', MLCP_TEXT_DOMAIN));
+        }
+
+        $ids = get_posts(array(
+            'post_type'      => MLCP_POST_TYPE,
+            'post_status'    => 'publish',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'orderby'        => array('menu_order' => 'ASC', 'date' => 'DESC'),
+        ));
+        $ids = array_map('intval', $ids);
+
+        $index  = array_search($post_id, $ids, true);
+        $target = $direction === 'up' ? $index - 1 : $index + 1;
+
+        if ($index !== false && isset($ids[$target])) {
+            $other        = $ids[$target];
+            $ids[$target] = $post_id;
+            $ids[$index]  = $other;
+
+            foreach ($ids as $menu_order => $id) {
+                wp_update_post(array(
+                    'ID'         => (int) $id,
+                    'menu_order' => (int) $menu_order,
+                ));
+            }
+        }
+
+        $redirect = wp_get_referer();
+        if (!$redirect || strpos($redirect, admin_url()) !== 0) {
+            $redirect = admin_url('edit.php?post_type=' . MLCP_POST_TYPE . '&post_status=publish');
+        }
+
+        wp_safe_redirect($redirect);
+        exit;
+    }
+
+    public static function always_show_trash_view($views) {
+        unset($views['all']);
+        $counts = wp_count_posts(MLCP_POST_TYPE);
+        $count  = isset($counts->trash) ? (int) $counts->trash : 0;
+        $url    = add_query_arg(array(
+            'post_type'   => MLCP_POST_TYPE,
+            'post_status' => 'trash',
+        ), admin_url('edit.php'));
+        $class  = isset($_GET['post_status']) && sanitize_key(wp_unslash($_GET['post_status'])) === 'trash'
+            ? ' class="current" aria-current="page"'
+            : '';
+
+        $views['trash'] = sprintf(
+            '<a href="%1$s"%2$s>Lixeira <span class="count">(%3$s)</span></a>',
+            esc_url($url),
+            $class,
+            number_format_i18n($count)
+        );
+
+        return $views;
     }
 
     public static function handle_admin_query($query) {
@@ -318,7 +396,7 @@ class MLCP_Admin {
         $item_id = isset($_GET['item_id']) ? (int) $_GET['item_id'] : 0;
         check_admin_referer($item_id > 0 ? 'mlcp_reset_analytics_' . $item_id : 'mlcp_reset_analytics_all');
 
-        MLCP_Helpers::reset_analytics($item_id);
+        MLCP_Analytics_Service::reset_all( (int) $item_id );
 
         wp_safe_redirect(add_query_arg(array(
             'page'            => 'mlcp-analytics',
@@ -424,5 +502,60 @@ class MLCP_Admin {
         }
 
         wp_send_json_success(array('message' => __('Ordenação salva.', MLCP_TEXT_DOMAIN)));
+    }
+
+    public static function ajax_save_items_order() {
+        check_ajax_referer('mlcp_admin_nonce', 'nonce');
+
+        if (!current_user_can('edit_posts')) {
+            wp_send_json_error(array('message' => __('Acesso negado.', MLCP_TEXT_DOMAIN)), 403);
+        }
+
+        $submitted = isset($_POST['order']) ? array_values(array_unique(array_map('absint', (array) $_POST['order']))) : array();
+        if (count($submitted) < 2) {
+            wp_send_json_error(array('message' => __('Ordenação inválida.', MLCP_TEXT_DOMAIN)), 400);
+        }
+
+        foreach ($submitted as $post_id) {
+            $post = get_post($post_id);
+            if (!$post || $post->post_type !== MLCP_POST_TYPE || $post->post_status !== 'publish' || !current_user_can('edit_post', $post_id)) {
+                wp_send_json_error(array('message' => __('Item inválido ou sem permissão.', MLCP_TEXT_DOMAIN)), 403);
+            }
+        }
+
+        // Replace only the visible items in the complete sequence. This keeps
+        // pagination and filtered list screens safe without disturbing hidden rows.
+        $all_ids = get_posts(array(
+            'post_type'      => MLCP_POST_TYPE,
+            'post_status'    => 'publish',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'orderby'        => array('menu_order' => 'ASC', 'date' => 'DESC'),
+        ));
+        $submitted_lookup = array_fill_keys($submitted, true);
+        $cursor = 0;
+
+        foreach ($all_ids as $index => $post_id) {
+            $post_id = (int) $post_id;
+            if (isset($submitted_lookup[$post_id])) {
+                $all_ids[$index] = $submitted[$cursor++];
+            }
+        }
+
+        if ($cursor !== count($submitted)) {
+            wp_send_json_error(array('message' => __('A lista mudou. Recarregue a página e tente novamente.', MLCP_TEXT_DOMAIN)), 409);
+        }
+
+        foreach ($all_ids as $menu_order => $post_id) {
+            $result = wp_update_post(array(
+                'ID'         => (int) $post_id,
+                'menu_order' => (int) $menu_order,
+            ), true);
+            if (is_wp_error($result)) {
+                wp_send_json_error(array('message' => __('Não foi possível salvar a ordenação.', MLCP_TEXT_DOMAIN)), 500);
+            }
+        }
+
+        wp_send_json_success(array('message' => __('Ordenação salva com sucesso.', MLCP_TEXT_DOMAIN)));
     }
 }
