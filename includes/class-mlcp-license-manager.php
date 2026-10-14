@@ -3,6 +3,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if ( class_exists( 'MLCP_License_Manager' ) ) { return; }
+
 class MLCP_License_Manager {
     const OPTION_KEY = 'mlcp_license_state';
 

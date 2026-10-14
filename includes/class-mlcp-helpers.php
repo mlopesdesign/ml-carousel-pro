@@ -3,6 +3,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if ( class_exists( 'MLCP_Helpers' ) ) { return; }
+
 class MLCP_Helpers {
     public static function get_settings() {
         $defaults = array(
@@ -113,10 +115,9 @@ class MLCP_Helpers {
     public static function admin_tabs() {
         return array(
             MLCP_MENU_SLUG => array('label' => __('Dashboard', MLCP_TEXT_DOMAIN), 'url' => self::admin_url(MLCP_MENU_SLUG)),
-            'edit.php?post_type=' . MLCP_POST_TYPE => array('label' => __('Itens', MLCP_TEXT_DOMAIN), 'url' => admin_url('edit.php?post_type=' . MLCP_POST_TYPE)),
+            'edit.php?post_type=' . MLCP_POST_TYPE => array('label' => __('Itens', MLCP_TEXT_DOMAIN), 'url' => admin_url('edit.php?post_type=' . MLCP_POST_TYPE . '&post_status=publish')),
             'post-new.php?post_type=' . MLCP_POST_TYPE => array('label' => __('Novo item', MLCP_TEXT_DOMAIN), 'url' => admin_url('post-new.php?post_type=' . MLCP_POST_TYPE)),
             'edit-tags.php?taxonomy=' . MLCP_GROUP_TAX . '&post_type=' . MLCP_POST_TYPE => array('label' => __('Grupos', MLCP_TEXT_DOMAIN), 'url' => admin_url('edit-tags.php?taxonomy=' . MLCP_GROUP_TAX . '&post_type=' . MLCP_POST_TYPE)),
-            'mlcp-sort' => array('label' => __('Ordenação', MLCP_TEXT_DOMAIN), 'url' => self::admin_url('mlcp-sort')),
             'mlcp-shortcodes' => array('label' => __('Shortcodes', MLCP_TEXT_DOMAIN), 'url' => self::admin_url('mlcp-shortcodes')),
             'mlcp-settings' => array('label' => __('Configurações', MLCP_TEXT_DOMAIN), 'url' => self::admin_url('mlcp-settings')),
             'mlcp-license' => array('label' => __('Licença e Planos', MLCP_TEXT_DOMAIN), 'url' => self::admin_url('mlcp-license')),
@@ -183,6 +184,11 @@ class MLCP_Helpers {
     public static function get_item_meta($post_id) {
         $date     = (string) get_post_meta($post_id, '_mlcp_date', true);
         $subtitle = (string) get_post_meta($post_id, '_mlcp_subtitle', true);
+        // New carousel items must start enabled. Preserve an explicit inactive
+        // state for existing items by distinguishing missing metadata from "0".
+        $active = metadata_exists('post', $post_id, '_mlcp_active')
+            ? (int) get_post_meta($post_id, '_mlcp_active', true)
+            : 1;
         $combined = trim(implode(' • ', array_filter(array($date, $subtitle), static function ($value) {
             return $value !== '';
         })));
@@ -197,7 +203,7 @@ class MLCP_Helpers {
             'new_tab'          => (int) get_post_meta($post_id, '_mlcp_new_tab', true),
             'item_bg_color'    => (string) get_post_meta($post_id, '_mlcp_item_bg_color', true),
             'item_margin'      => max(0, min(200, (int) get_post_meta($post_id, '_mlcp_item_margin', true))),
-            'active'           => (int) get_post_meta($post_id, '_mlcp_active', true),
+            'active'           => $active,
             'expire_at'        => (int) get_post_meta($post_id, '_mlcp_expire_at', true),
         );
     }
@@ -296,44 +302,6 @@ class MLCP_Helpers {
         return array('is_plugin' => false, 'active' => '', 'title' => '', 'subtitle' => '');
     }
 
-    public static function get_item_analytics($post_id) {
-        $post_id = (int) $post_id;
-        return array(
-            'views'         => max(0, (int) get_post_meta($post_id, '_mlcp_views', true)),
-            'clicks'        => max(0, (int) get_post_meta($post_id, '_mlcp_clicks', true)),
-            'last_activity' => max(0, (int) get_post_meta($post_id, '_mlcp_last_activity', true)),
-        );
-    }
-
-    public static function get_item_ctr($views, $clicks) {
-        $views  = max(0, (int) $views);
-        $clicks = max(0, (int) $clicks);
-        if ($views <= 0) {
-            return '0%';
-        }
-        $ctr = ($clicks / $views) * 100;
-        return rtrim(rtrim(number_format_i18n($ctr, 1), '0'), ',.') . '%';
-    }
-
-    public static function get_analytics_summary() {
-        $posts = get_posts(array(
-            'post_type'      => MLCP_POST_TYPE,
-            'posts_per_page' => -1,
-            'post_status'    => array('publish', 'future', 'draft', 'pending', 'private'),
-            'fields'         => 'ids',
-        ));
-
-        $summary = array('views' => 0, 'clicks' => 0, 'items' => 0);
-        foreach ($posts as $post_id) {
-            $analytics         = self::get_item_analytics($post_id);
-            $summary['views']  += (int) $analytics['views'];
-            $summary['clicks'] += (int) $analytics['clicks'];
-            $summary['items']++;
-        }
-        $summary['ctr'] = self::get_item_ctr($summary['views'], $summary['clicks']);
-        return $summary;
-    }
-
     public static function increment_analytics($post_id, $event) {
         $post_id = (int) $post_id;
         $event   = sanitize_key((string) $event);
@@ -346,88 +314,9 @@ class MLCP_Helpers {
             return false;
         }
 
-        $key     = $event === 'click' ? '_mlcp_clicks' : '_mlcp_views';
-        $current = max(0, (int) get_post_meta($post_id, $key, true));
-        update_post_meta($post_id, $key, $current + 1);
-        update_post_meta($post_id, '_mlcp_last_activity', current_time('timestamp', true));
-        return true;
-    }
-
-    public static function reset_analytics($post_id = 0) {
-        $post_id = (int) $post_id;
-        if ($post_id > 0) {
-            delete_post_meta($post_id, '_mlcp_views');
-            delete_post_meta($post_id, '_mlcp_clicks');
-            delete_post_meta($post_id, '_mlcp_last_activity');
-            return;
-        }
-
-        $posts = get_posts(array(
-            'post_type'      => MLCP_POST_TYPE,
-            'posts_per_page' => -1,
-            'post_status'    => 'any',
-            'fields'         => 'ids',
-        ));
-
-        foreach ($posts as $item_id) {
-            delete_post_meta((int) $item_id, '_mlcp_views');
-            delete_post_meta((int) $item_id, '_mlcp_clicks');
-            delete_post_meta((int) $item_id, '_mlcp_last_activity');
-        }
-    }
-
-    /**
-     * One-time migration: copy legacy wp_options analytics into post_meta.
-     * Guarded by mlcp_migrated_v108 option — runs only once.
-     */
-    public static function migrate_legacy_analytics() {
-        if ( get_option( 'mlcp_migrated_v108' ) ) {
-            return;
-        }
-
-        $src_a = get_option( 'mlcp_analytics',     array() );
-        $src_b = get_option( 'ml_banner_analytics', array() );
-
-        $src_a = is_array( $src_a ) ? $src_a : array();
-        $src_b = is_array( $src_b ) ? $src_b : array();
-
-        $merged = array_merge( $src_b, $src_a );
-
-        foreach ( $merged as $post_id => $data ) {
-            $post_id = (int) $post_id;
-            if ( $post_id <= 0 ) {
-                continue;
-            }
-            if ( MLCP_POST_TYPE !== get_post_type( $post_id ) ) {
-                continue;
-            }
-
-            $data = is_array( $data ) ? $data : array();
-
-            $leg_views  = max( 0, (int) ( $data['views']  ?? 0 ) );
-            $leg_clicks = max( 0, (int) ( $data['clicks'] ?? 0 ) );
-            $leg_last   = max( 0, (int) ( $data['last']   ?? 0 ) );
-
-            $cur_views  = max( 0, (int) get_post_meta( $post_id, '_mlcp_views',         true ) );
-            $cur_clicks = max( 0, (int) get_post_meta( $post_id, '_mlcp_clicks',        true ) );
-            $cur_last   = max( 0, (int) get_post_meta( $post_id, '_mlcp_last_activity', true ) );
-
-            $new_views  = max( $cur_views,  $leg_views  );
-            $new_clicks = max( $cur_clicks, $leg_clicks );
-            $new_last   = max( $cur_last,   $leg_last   );
-
-            if ( $new_views > $cur_views ) {
-                update_post_meta( $post_id, '_mlcp_views', $new_views );
-            }
-            if ( $new_clicks > $cur_clicks ) {
-                update_post_meta( $post_id, '_mlcp_clicks', $new_clicks );
-            }
-            if ( $new_last > $cur_last ) {
-                update_post_meta( $post_id, '_mlcp_last_activity', $new_last );
-            }
-        }
-
-        update_option( 'mlcp_migrated_v108', 1, false );
+        return $event === 'click'
+            ? MLCP_Analytics_Service::increment_click($post_id)
+            : MLCP_Analytics_Service::increment_view($post_id);
     }
 
 }

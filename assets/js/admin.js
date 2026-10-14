@@ -84,6 +84,81 @@ jQuery(function($){
     });
   }
 
+  function initItemsDragOrder() {
+    const $table = $('.post-type-mlcp_item #the-list');
+    const $publishedRows = $table.children('tr.type-mlcp_item').filter(function(){
+      return $(this).find('.mlcp-order-position').length > 0;
+    });
+    if (!$table.length || $publishedRows.length < 2) return;
+    $publishedRows.addClass('mlcp-draggable-row');
+
+    let previousOrder = [];
+    let positionSlots = [];
+    const rowIds = function(){
+      return $table.children('tr.type-mlcp_item').filter(function(){
+        return $(this).find('.mlcp-order-position').length > 0;
+      }).map(function(){
+        return parseInt((this.id || '').replace('post-', ''), 10);
+      }).get().filter(Boolean);
+    };
+
+    $table.sortable({
+      items: '> tr.mlcp-draggable-row',
+      axis: 'y',
+      cursor: 'grabbing',
+      tolerance: 'pointer',
+      distance: 4,
+      cancel: 'a,button,input,textarea,select,option,label',
+      start: function(event, ui){
+        previousOrder = rowIds();
+        positionSlots = $table.children('tr.type-mlcp_item').filter(function(){
+          return $(this).find('.mlcp-order-position').length > 0;
+        }).map(function(){
+          return parseInt($(this).find('.mlcp-order-position').text(), 10);
+        }).get().filter(Boolean).sort(function(a, b){ return a - b; });
+        $table.addClass('mlcp-items-sorting');
+        ui.item.addClass('mlcp-item-row-dragging');
+      },
+      stop: function(){
+        const order = rowIds();
+        $table.removeClass('mlcp-items-sorting');
+        $table.children().removeClass('mlcp-item-row-dragging');
+        $table.children('tr.type-mlcp_item').filter(function(){
+          return $(this).find('.mlcp-order-position').length > 0;
+        }).each(function(index){
+          $(this).find('.mlcp-order-position').text(positionSlots[index] || (index + 1));
+        });
+        $table.sortable('disable');
+
+        $.post(mlcpAdmin.ajaxUrl, {
+          action: 'mlcp_save_items_order',
+          nonce: mlcpAdmin.nonce,
+          order: order
+        }).done(function(resp){
+          if (resp && resp.success) {
+            showToast(mlcpAdmin.saveSuccess, 'success');
+          } else {
+            restoreItemsOrder(previousOrder);
+            showToast((resp && resp.data && resp.data.message) || mlcpAdmin.saveError, 'error');
+          }
+          $table.sortable('enable');
+        }).fail(function(xhr){
+          restoreItemsOrder(previousOrder);
+          const message = xhr.responseJSON && xhr.responseJSON.data && xhr.responseJSON.data.message;
+          showToast(message || mlcpAdmin.saveError, 'error');
+          $table.sortable('enable');
+        });
+      }
+    });
+
+    function restoreItemsOrder(order) {
+      order.forEach(function(id){
+        const $row = $('#post-' + id);
+        if ($row.length) $table.append($row);
+      });
+    }
+  }
+
 
   const $noticeSource = $('.mlcp-toast-source').first();
   if ($noticeSource.length) {
@@ -146,6 +221,8 @@ jQuery(function($){
       showToast(mlcpAdmin.saveError);
     });
   });
+
+  initItemsDragOrder();
 });
 
 

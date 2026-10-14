@@ -3,6 +3,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if ( class_exists( 'MLCP_Post_Types' ) ) { return; }
+
 class MLCP_Post_Types {
     public static function register() {
         $labels = array(
@@ -17,6 +19,7 @@ class MLCP_Post_Types {
             'not_found' => __('Nenhum item encontrado', MLCP_TEXT_DOMAIN),
             'menu_name' => __('Itens', MLCP_TEXT_DOMAIN),
         );
+
         register_post_type(MLCP_POST_TYPE, array(
             'labels' => $labels,
             'public' => false,
@@ -24,6 +27,8 @@ class MLCP_Post_Types {
             'show_in_menu' => false,
             'supports' => array('title'),
             'hierarchical' => false,
+            'capability_type' => 'post',
+            'map_meta_cap' => true,
             'menu_position' => 58,
             'menu_icon' => 'dashicons-images-alt2',
             'rewrite' => false,

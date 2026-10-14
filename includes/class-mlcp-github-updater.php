@@ -20,6 +20,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+if ( class_exists( 'MLCP_GitHub_Updater' ) ) { return; }
+
 class MLCP_GitHub_Updater {
 
     const GITHUB_USER    = 'mlopesdesign';
@@ -27,13 +29,13 @@ class MLCP_GitHub_Updater {
     const PLUGIN_SLUG    = 'ml-carousel-pro';
     const PLUGIN_FILE    = 'ml-carousel-pro/ml-carousel-pro.php';
     const TRANSIENT_KEY  = 'mlcp_github_release_cache';
-    const CACHE_TTL      = 21600; // 6 hours
-    const CACHE_FAIL_TTL = 1800;  // 30 min on failure
+    const CACHE_TTL      = 60;    // 1 minute
+    const CACHE_FAIL_TTL = 60;    // 1 minute on failure
 
     private static $instance = null;
 
     /* ------------------------------------------------------------------ */
-    /* Bootstrap — must run on admin_init only                             */
+    /* Bootstrap — register update filters as early as possible              */
     /* ------------------------------------------------------------------ */
 
     public static function init() {
@@ -47,6 +49,8 @@ class MLCP_GitHub_Updater {
     }
 
     private function __construct() {
+        $this->clear_legacy_caches_on_version_change();
+
         add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'check_for_update' ) );
         add_filter( 'plugins_api',                           array( $this, 'plugin_info'      ), 20, 3 );
         add_filter( 'upgrader_source_selection',             array( $this, 'fix_source_dir'   ), 10, 4 );
@@ -68,6 +72,25 @@ class MLCP_GitHub_Updater {
 
     private function has_token() {
         return $this->get_token() !== '';
+    }
+
+
+    /**
+     * Clear old duplicated updater caches once per installed version.
+     * Older builds loaded a second updater with transient ml_updater_{md5(slug)}.
+     */
+    private function clear_legacy_caches_on_version_change() {
+        $option_key = 'mlcp_updater_cache_version';
+        $stored     = get_option( $option_key, '' );
+
+        if ( $stored === MLCP_VERSION ) {
+            return;
+        }
+
+        delete_transient( self::TRANSIENT_KEY );
+        delete_transient( 'ml_updater_' . md5( self::PLUGIN_SLUG ) );
+        delete_site_transient( 'update_plugins' );
+        update_option( $option_key, MLCP_VERSION, false );
     }
 
     /* ------------------------------------------------------------------ */
@@ -98,10 +121,18 @@ class MLCP_GitHub_Updater {
     }
 
     public function fetch_latest_release( $force = false ) {
+        if ( is_admin() && isset( $_GET['force-check'] ) ) {
+            delete_transient( self::TRANSIENT_KEY );
+            $force = true;
+        }
+
         if ( ! $force ) {
             $cached = get_transient( self::TRANSIENT_KEY );
+            if ( is_array( $cached ) ) {
+                return $cached;
+            }
             if ( $cached !== false ) {
-                return is_array( $cached ) ? $cached : null;
+                delete_transient( self::TRANSIENT_KEY );
             }
         }
 

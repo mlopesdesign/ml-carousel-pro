@@ -4,7 +4,7 @@ Tags: carousel, banner, slider, shortcode, groups
 Requires at least: 6.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.11.12
+Stable tag: 1.12.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -46,13 +46,85 @@ No modo Contain, a imagem é exibida inteira sem corte, ideal para logos ou imag
 
 == Changelog ==
 
+= 1.12.5 =
+* Corrigido o arraste que transformava as linhas em blocos vazios com bordas tracejadas
+* Removidos placeholder e helper personalizados da tabela
+* A ordenação agora usa o comportamento nativo simples do WordPress/jQuery UI, mantendo as linhas visíveis
+
+= 1.12.4 =
+* Corrigida a ativação do arraste na tela Itens quando a URL não contém post_status
+* Removido o ícone de movimento: agora basta segurar qualquer área livre da linha e arrastar
+* Melhorado o retorno visual durante o reposicionamento dos banners
+
+= 1.12.3 =
+* A tela Itens agora permite ordenar banners arrastando cada linha para cima ou para baixo
+* A nova ordem é salva automaticamente e aplicada ao carrossel sem recarregar a página
+* A ordenação preserva com segurança itens fora da página atual e resultados filtrados
+
+= 1.12.2 =
+* Ordenação transferida para a tela Itens
+* Adicionados controles para mover cada banner para cima ou para baixo
+* Removida a aba separada Ordenação
+
+= 1.12.1 =
+* Release corretiva com versionamento inédito para atualização segura sobre a versão 1.11.17
+* Mantidas integralmente as correções consolidadas de permissões, expiração e Lixeira
+
+= 1.12.0 =
+* Consolidação: ao ativar, desativa automaticamente cópias antigas do mesmo ML Banner Pro
+* Corrigido: uma única versão ativa controla painel, banners, expiração e Lixeira
+* Corrigido: verificação duplicada do atualizador removida
+* Corrigido: permissões administrativas mapeadas corretamente
+* Mantido: Itens somente publicados, Rascunhos separados e Lixeira (0) sempre visível
+
+= 1.11.17 =
+* Corrigido: administradores podem mover, restaurar, excluir definitivamente e esvaziar a Lixeira
+* Corrigido: capacidades meta do tipo mlcp_item agora são mapeadas corretamente pelo WordPress
+* Mantido: Itens exibe somente publicados; Rascunhos e Lixeira permanecem separados
+
+= 1.11.16 =
+* Corrigido: a tela principal Itens mostra exclusivamente banners publicados
+* Separado: rascunhos aparecem somente na aba Rascunhos e excluídos somente na aba Lixeira
+* Removido: filtro Todos, que misturava estados diferentes na mesma listagem
+
+= 1.11.15 =
+* Adicionado: a aba Lixeira permanece sempre visível na tela Itens, inclusive como Lixeira (0)
+* Mantido: contador atualizado, restauração, exclusão individual e Esvaziar lixeira
+
+= 1.11.14 =
+* Validado: mover para a Lixeira funciona individualmente e em ações em massa pelo fluxo nativo do WordPress
+* Migração automática: banners vencidos que estavam em Rascunho passam para a Lixeira
+* Preservado: restauração e Esvaziar lixeira usam o fluxo padrão do WordPress
+
+= 1.11.13 =
+* Alterado: banners vencidos agora são enviados automaticamente para a Lixeira
+* Adicionado: banners vencidos podem ser restaurados ou removidos definitivamente com Esvaziar lixeira
+
 = 1.11.12 =
-* Alterado (identidade visual): o painel passa a usar exclusivamente a paleta ML Lopes Design. A pílula da versão era `#eef2ff` / `#1d4ed8` e o badge azul `#eff6ff` / `#c9daf8` / `#245ba8`; ambos migraram para `--mlcp-accent-soft` e `--mlcp-accent`.
-* Corrigido: o azul padrão do WordPress vazava nos botões primários, porque o CSS não sobrescrevia `.button-primary`. Agora `.button-primary` e `.button-secondary` são sobrescritos dentro de `.mlcp-wrap`.
-* Alterado: os badges de status "pendente" (azul) e "agendado" (roxo) passaram para tons da paleta. Verde, amarelo e vermelho foram mantidos por serem semântica universal de publicado, privado e perigo.
-* Limpeza: tons quase duplicados consolidados nos tokens existentes — `#cad9de` e `#d9e7ea` para `--mlcp-border`, `#fbfefe` para `#f6fafb`, `#eef5f7` para `--mlcp-accent-soft`.
-* Nenhuma alteração estrutural: apenas valores de cor. Contagem de regras CSS e layout preservados.
-* Sincronizado: o cabeçalho do plugin e a `MLCP_VERSION` estavam em 1.10.19 enquanto a release publicada era a v1.11.11. Agora cabeçalho, constante, Stable tag e tag do git apontam para a mesma versão.
+* Corrigido: banners novos agora iniciam ativos e permanecem visíveis após salvar/publicar
+* Preservado: banners existentes marcados manualmente como inativos continuam inativos
+
+= 1.11.11 =
+* Hotfix: motor do carousel resistente a conflitos de tema
+* front.js: cardStep() com 4 camadas de fallback (DOM, CSS gap, CSS var, hardcoded)
+* front.js: boot com retry exponencial (8 tentativas) para temas com visibilidade deferida (AOS, Elementor animations, jQuery show)
+* front.js: setas com stopPropagation() para evitar interceptação por handlers do tema
+* front.js: window.load re-trigger para carousels com transform=0 no DOMContentLoaded
+* front.css: !important em overflow, transform, z-index e pointer-events das setas e viewport para blindar contra resets de tema
+
+PYEOF= 1.11.1 =
+* Hotfix: removidos screen IDs ml-banner-pro_page_* indevidos de class-mlcp-assets.php
+* Slug tecnico ml-carousel-pro preservado em todos os pontos tecnicos
+* ZIP renomeado para ml-carousel-pro-vX.Y.Z padrao correto
+
+= 1.11.0 =
+* Analytics consolidado em MLCP_Analytics_Service (storage: mlcp_analytics)
+* Migração automática de dados legacy (ml_banner_analytics + post_meta)
+* Anti-inflação de views: deduplicação por carouselId:itemId por sessão
+* Click tracking: debounce 650ms, captura na fase capture sem bubbling duplicado
+* Guards defined() e class_exists() em todos os arquivos
+* Updater Core/Updater.php ativo
+
 
 = 1.10.16 =
 * Adicionado: GitHub Updater — atualizações automáticas via WordPress admin a partir de GitHub Releases

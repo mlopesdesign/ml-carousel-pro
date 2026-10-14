@@ -56,13 +56,13 @@
         ?>
 
         <!-- Status filter tabs -->
-        <div class="mlcp-analytics-filter" style="margin-bottom:16px;display:flex;gap:6px;flex-wrap:wrap;">
+        <div class="mlcp-tabs mlcp-analytics-filters">
             <?php foreach ($status_labels as $slug => $label) :
                 $is_active = ($current_status === $slug);
                 $url = $slug === 'all' ? $base_url : add_query_arg('mlcp_status', $slug, $base_url);
             ?>
                 <a href="<?php echo esc_url($url); ?>"
-                   class="button<?php echo $is_active ? ' button-primary' : ''; ?>">
+                   class="mlcp-tab<?php echo $is_active ? ' is-active' : ''; ?>">
                     <?php echo esc_html($label); ?>
                 </a>
             <?php endforeach; ?>
@@ -82,14 +82,15 @@
         <?php if (!empty($filtered_items)) : ?>
             <div class="mlcp-analytics-list">
                 <?php foreach ($filtered_items as $item) :
-                    $analytics  = MLCP_Helpers::get_item_analytics($item->ID);
+                    $analytics  = MLCP_Analytics_Service::get_item( (int) $item->ID );
                     $views      = (int) $analytics['views'];
                     $clicks     = (int) $analytics['clicks'];
-                    $ctr        = MLCP_Helpers::get_item_ctr($views, $clicks);
+                    $ctr_val    = $views > 0 ? round( $clicks / $views * 100, 1 ) . '%' : '0%';
+                    $ctr        = $ctr_val;
                     $img        = MLCP_Helpers::get_image_url($item->ID, 'thumbnail');
                     $terms      = get_the_terms($item->ID, MLCP_GROUP_TAX);
                     $group_names = ($terms && !is_wp_error($terms)) ? implode(', ', wp_list_pluck($terms, 'name')) : '—';
-                    $last       = !empty($analytics['last_activity']) ? wp_date('d/m/Y H:i', (int) $analytics['last_activity'], wp_timezone()) : '—';
+                    $last       = !empty($analytics['last']) ? wp_date('d/m/Y H:i', (int) $analytics['last'], wp_timezone()) : '—';
                     $reset_url  = wp_nonce_url(admin_url('admin-post.php?action=mlcp_reset_analytics&item_id=' . (int) $item->ID), 'mlcp_reset_analytics_' . (int) $item->ID);
                     $status_label = $status_labels[$item->post_status] ?? $item->post_status;
                 ?>

@@ -3,6 +3,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+if ( class_exists( 'MLCP_Shortcodes' ) ) { return; }
+
 class MLCP_Shortcodes {
     public static function render($atts = array()) {
         $atts = shortcode_atts(array(
