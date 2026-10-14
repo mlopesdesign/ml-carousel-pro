@@ -3,15 +3,8 @@
  * MLCP GitHub Updater
  *
  * Hooks into WordPress plugin update flow using GitHub Releases as source.
- * Works with public and private repositories.
- *
- * Token configuration (private repos — add to wp-config.php):
- *   define( 'MLMD_GITHUB_TOKEN_ML_CAROUSEL_PRO', 'ghp_your_token_here' );
- *
- * Or via filter:
- *   add_filter( 'mlmd_github_token_ml_carousel_pro', fn() => 'ghp_your_token' );
- *
- * Token is NEVER stored or displayed in wp-admin.
+ * Fonte: repositorio publico mlopesdesign/ml-carousel-pro-releases (somente ZIPs).
+ * Nenhum token e necessario.
  *
  * @package ML_Carousel_Pro
  */
@@ -25,22 +18,25 @@ if ( class_exists( 'MLCP_GitHub_Updater' ) ) { return; }
 class MLCP_GitHub_Updater {
 
     const GITHUB_USER    = 'mlopesdesign';
-    const GITHUB_REPO    = 'ml-carousel-pro';
+    // Repositorio PUBLICO so com os ZIPs (o codigo fica em repositorio privado).
+    const GITHUB_REPO    = 'ml-carousel-pro-releases';
     const PLUGIN_SLUG    = 'ml-carousel-pro';
     const PLUGIN_FILE    = 'ml-carousel-pro/ml-carousel-pro.php';
     const TRANSIENT_KEY  = 'mlcp_github_release_cache';
-    const CACHE_TTL      = 60;    // 1 minute
-    const CACHE_FAIL_TTL = 60;    // 1 minute on failure
+    const CACHE_TTL      = 21600; // 6 horas
+    const CACHE_FAIL_TTL = 900;   // 15 minutos em falha
 
     private static $instance = null;
 
     /* ------------------------------------------------------------------ */
-    /* Bootstrap — register update filters as early as possible              */
+    /* Bootstrap                                                            */
     /* ------------------------------------------------------------------ */
 
     public static function init() {
-        if ( ! is_admin() ) {
-            return;
+        // Painel, WP-Cron (atualizacao automatica) e WP-CLI.
+        $is_cli = defined( 'WP_CLI' ) && WP_CLI;
+        if ( ! is_admin() && ! wp_doing_cron() && ! $is_cli ) {
+            return null;
         }
         if ( self::$instance === null ) {
             self::$instance = new self();
@@ -54,26 +50,7 @@ class MLCP_GitHub_Updater {
         add_filter( 'pre_set_site_transient_update_plugins', array( $this, 'check_for_update' ) );
         add_filter( 'plugins_api',                           array( $this, 'plugin_info'      ), 20, 3 );
         add_filter( 'upgrader_source_selection',             array( $this, 'fix_source_dir'   ), 10, 4 );
-        add_filter( 'http_request_args',                     array( $this, 'maybe_inject_auth'), 10, 2 );
     }
-
-    /* ------------------------------------------------------------------ */
-    /* Token                                                                */
-    /* ------------------------------------------------------------------ */
-
-    private function get_token() {
-        $token = '';
-        if ( defined( 'MLMD_GITHUB_TOKEN_ML_CAROUSEL_PRO' ) ) {
-            $token = MLMD_GITHUB_TOKEN_ML_CAROUSEL_PRO;
-        }
-        $token = apply_filters( 'mlmd_github_token_ml_carousel_pro', $token );
-        return is_string( $token ) ? trim( $token ) : '';
-    }
-
-    private function has_token() {
-        return $this->get_token() !== '';
-    }
-
 
     /**
      * Clear old duplicated updater caches once per installed version.
@@ -106,23 +83,17 @@ class MLCP_GitHub_Updater {
     }
 
     private function request_args() {
-        $args = array(
+        return array(
             'timeout'    => 15,
-            'user-agent' => 'WordPress/' . get_bloginfo( 'version' ) . '; ' . get_bloginfo( 'url' ),
+            'user-agent' => 'ML-Banner-Pro-Updater/' . MLCP_VERSION . '; WordPress/' . get_bloginfo( 'version' ),
             'headers'    => array(
                 'Accept' => 'application/vnd.github.v3+json',
             ),
         );
-        $token = $this->get_token();
-        if ( $token !== '' ) {
-            $args['headers']['Authorization'] = 'Bearer ' . $token;
-        }
-        return $args;
     }
 
     public function fetch_latest_release( $force = false ) {
         if ( is_admin() && isset( $_GET['force-check'] ) ) {
-            delete_transient( self::TRANSIENT_KEY );
             $force = true;
         }
 
@@ -131,31 +102,28 @@ class MLCP_GitHub_Updater {
             if ( is_array( $cached ) ) {
                 return $cached;
             }
-            if ( $cached !== false ) {
-                delete_transient( self::TRANSIENT_KEY );
+            if ( $cached === 'error' ) {
+                return null; // Falha recente: respeita a janela antes de consultar de novo.
             }
         }
 
         $response = wp_remote_get( $this->api_url(), $this->request_args() );
-
-        if ( is_wp_error( $response ) ) {
-            set_transient( self::TRANSIENT_KEY, 'error', self::CACHE_FAIL_TTL );
-            return null;
+        $body     = null;
+        if ( ! is_wp_error( $response ) && (int) wp_remote_retrieve_response_code( $response ) === 200 ) {
+            $body = json_decode( wp_remote_retrieve_body( $response ), true );
         }
 
-        $code = wp_remote_retrieve_response_code( $response );
-        if ( $code !== 200 ) {
-            set_transient( self::TRANSIENT_KEY, 'error', self::CACHE_FAIL_TTL );
-            return null;
-        }
-
-        $body = json_decode( wp_remote_retrieve_body( $response ), true );
         if ( ! is_array( $body ) || empty( $body['tag_name'] ) ) {
-            set_transient( self::TRANSIENT_KEY, 'error', self::CACHE_FAIL_TTL );
+            // Falha: nao apaga um resultado bom ainda valido (consulta forcada que falhou).
+            if ( ! is_array( get_transient( self::TRANSIENT_KEY ) ) ) {
+                set_transient( self::TRANSIENT_KEY, 'error', self::CACHE_FAIL_TTL );
+            }
             return null;
         }
 
-        set_transient( self::TRANSIENT_KEY, $body, self::CACHE_TTL );
+        // Release ainda sem o ZIP exato (asset em upload): cache curto para nao atrasar a oferta.
+        $ttl = $this->release_zip_url( $body ) !== '' ? self::CACHE_TTL : self::CACHE_FAIL_TTL;
+        set_transient( self::TRANSIENT_KEY, $body, $ttl );
         return $body;
     }
 
@@ -163,43 +131,32 @@ class MLCP_GitHub_Updater {
         if ( ! is_array( $release ) || empty( $release['tag_name'] ) ) {
             return '';
         }
-        return ltrim( $release['tag_name'], 'v' );
+        return ltrim( (string) $release['tag_name'], 'v' );
     }
 
+    /**
+     * Somente o asset exato ml-carousel-pro-v{versao}.zip da propria release.
+     * Sem "qualquer ZIP" e sem zipball (estrutura de pasta errada).
+     */
     private function release_zip_url( $release ) {
-        if ( ! is_array( $release ) ) {
+        if ( ! is_array( $release ) || empty( $release['assets'] ) || ! is_array( $release['assets'] ) ) {
             return '';
         }
-
-        // 1. Prefer named asset ml-carousel-pro-*.zip (attached by GitHub Actions)
-        if ( ! empty( $release['assets'] ) && is_array( $release['assets'] ) ) {
-            foreach ( $release['assets'] as $asset ) {
-                if (
-                    ! empty( $asset['name'] ) &&
-                    ! empty( $asset['browser_download_url'] ) &&
-                    substr( $asset['name'], -4 ) === '.zip' &&
-                    strpos( $asset['name'], 'ml-carousel-pro' ) !== false
-                ) {
-                    // For private repos: use API download URL with auth instead of browser URL
-                    if ( $this->has_token() && ! empty( $asset['url'] ) ) {
-                        return $asset['url']; // API URL — we inject auth header in maybe_inject_auth
-                    }
-                    return $asset['browser_download_url'];
-                }
-            }
-            // 2. Any ZIP asset
-            foreach ( $release['assets'] as $asset ) {
-                if ( ! empty( $asset['browser_download_url'] ) && substr( $asset['name'] ?? '', -4 ) === '.zip' ) {
-                    if ( $this->has_token() && ! empty( $asset['url'] ) ) {
-                        return $asset['url'];
-                    }
-                    return $asset['browser_download_url'];
-                }
+        $expected = self::PLUGIN_SLUG . '-v' . $this->release_version( $release ) . '.zip';
+        foreach ( $release['assets'] as $asset ) {
+            if ( isset( $asset['name'], $asset['browser_download_url'] ) && $asset['name'] === $expected ) {
+                return (string) $asset['browser_download_url'];
             }
         }
+        return '';
+    }
 
-        // 3. Fallback: GitHub source zipball
-        return ! empty( $release['zipball_url'] ) ? $release['zipball_url'] : '';
+    private function icons() {
+        return array(
+            '1x'      => MLCP_PLUGIN_URL . 'assets/images/icon-128x128.png',
+            '2x'      => MLCP_PLUGIN_URL . 'assets/images/icon-256x256.png',
+            'default' => MLCP_PLUGIN_URL . 'assets/images/icon-256x256.png',
+        );
     }
 
     /* ------------------------------------------------------------------ */
@@ -207,7 +164,7 @@ class MLCP_GitHub_Updater {
     /* ------------------------------------------------------------------ */
 
     public function check_for_update( $transient ) {
-        if ( empty( $transient->checked ) ) {
+        if ( ! is_object( $transient ) || empty( $transient->checked ) ) {
             return $transient;
         }
 
@@ -216,32 +173,48 @@ class MLCP_GitHub_Updater {
             return $transient;
         }
 
-        $remote_version  = $this->release_version( $release );
-        $current_version = MLCP_VERSION;
-
+        $remote_version = $this->release_version( $release );
         if ( $remote_version === '' ) {
             return $transient;
         }
+        $zip_url = $this->release_zip_url( $release );
 
-        if ( version_compare( $remote_version, $current_version, '>' ) ) {
-            $zip_url = $this->release_zip_url( $release );
+        $obj               = new stdClass();
+        $obj->id           = self::GITHUB_USER . '/' . self::GITHUB_REPO;
+        $obj->slug         = self::PLUGIN_SLUG;
+        $obj->plugin       = self::PLUGIN_FILE;
+        $obj->new_version  = $remote_version;
+        $obj->url          = 'https://github.com/' . self::GITHUB_USER . '/' . self::GITHUB_REPO;
+        $obj->package      = $zip_url;
+        $obj->icons        = $this->icons();
+        $obj->banners      = array();
+        $obj->banners_rtl  = array();
+        $obj->requires     = '6.0';
+        $obj->requires_php = '7.4';
+        $obj->tested       = '6.8';
+        $obj->compatibility = new stdClass();
+        $obj->upgrade_notice = '';
 
-            $obj               = new stdClass();
-            $obj->id           = self::GITHUB_USER . '/' . self::GITHUB_REPO;
-            $obj->slug         = self::PLUGIN_SLUG;
-            $obj->plugin       = self::PLUGIN_FILE;
-            $obj->new_version  = $remote_version;
-            $obj->url          = 'https://github.com/' . self::GITHUB_USER . '/' . self::GITHUB_REPO;
-            $obj->package      = $zip_url;
-            $obj->icons        = array();
-            $obj->banners      = array();
-            $obj->banners_rtl  = array();
-            $obj->requires     = '6.0';
-            $obj->requires_php = '7.4';
-            $obj->tested       = '6.7';
-            $obj->upgrade_notice = '';
-
+        if ( $zip_url !== '' && version_compare( $remote_version, MLCP_VERSION, '>' ) ) {
+            if ( ! isset( $transient->response ) || ! is_array( $transient->response ) ) {
+                $transient->response = array();
+            }
             $transient->response[ self::PLUGIN_FILE ] = $obj;
+            if ( isset( $transient->no_update ) && is_array( $transient->no_update ) ) {
+                unset( $transient->no_update[ self::PLUGIN_FILE ] );
+            }
+        } else {
+            // Sem versao nova (ou sem o ZIP exato): no_update, para o WP mostrar o estado certo
+            // e o controle de atualizacao automatica.
+            $obj->new_version = MLCP_VERSION;
+            $obj->package     = '';
+            if ( ! isset( $transient->no_update ) || ! is_array( $transient->no_update ) ) {
+                $transient->no_update = array();
+            }
+            $transient->no_update[ self::PLUGIN_FILE ] = $obj;
+            if ( isset( $transient->response ) && is_array( $transient->response ) ) {
+                unset( $transient->response[ self::PLUGIN_FILE ] );
+            }
         }
 
         return $transient;
@@ -272,10 +245,11 @@ class MLCP_GitHub_Updater {
         $info->homepage      = 'https://github.com/' . self::GITHUB_USER . '/' . self::GITHUB_REPO;
         $info->requires      = '6.0';
         $info->requires_php  = '7.4';
-        $info->tested        = '6.7';
+        $info->tested        = '6.8';
         $info->download_link = $zip_url;
         $info->trunk         = $zip_url;
         $info->last_updated  = $release['published_at'] ?? '';
+        $info->icons         = $this->icons();
         $info->sections      = array(
             'description' => 'ML Banner Pro — carrossel profissional com analytics, grupos e shortcodes para WordPress.',
             'changelog'   => ! empty( $release['body'] ) ? wp_kses_post( $release['body'] ) : 'Ver ' . esc_url( 'https://github.com/' . self::GITHUB_USER . '/' . self::GITHUB_REPO . '/releases' ),
@@ -285,8 +259,7 @@ class MLCP_GitHub_Updater {
     }
 
     /**
-     * Fix extracted folder name so WP installs over ml-carousel-pro/
-     * and not a random "mlopesdesign-ml-carousel-pro-abc123/" folder.
+     * Garante a pasta ml-carousel-pro/ ao instalar (o ZIP oficial ja vem certo).
      */
     public function fix_source_dir( $source, $remote_source, $upgrader, $hook_extra ) {
         if ( ! isset( $hook_extra['plugin'] ) || $hook_extra['plugin'] !== self::PLUGIN_FILE ) {
@@ -302,7 +275,7 @@ class MLCP_GitHub_Updater {
         $intended = trailingslashit( $remote_source ) . self::PLUGIN_SLUG . '/';
 
         if ( trailingslashit( $source ) === $intended ) {
-            return $source; // Already correct (our ZIP has the right root)
+            return $source;
         }
 
         if ( $wp_filesystem->exists( $source ) && $wp_filesystem->move( $source, $intended ) ) {
@@ -312,40 +285,25 @@ class MLCP_GitHub_Updater {
         return $source;
     }
 
-    /**
-     * Inject Authorization header for private repo asset downloads.
-     * GitHub API asset URLs require auth; browser_download_url redirects to S3.
-     */
-    public function maybe_inject_auth( $args, $url ) {
-        if ( strpos( $url, 'api.github.com/repos/' . self::GITHUB_USER . '/' . self::GITHUB_REPO ) !== false ) {
-            $token = $this->get_token();
-            if ( $token !== '' ) {
-                $args['headers']['Authorization'] = 'Bearer ' . $token;
-                $args['headers']['Accept']        = 'application/octet-stream';
-            }
-        }
-        return $args;
-    }
-
     /* ------------------------------------------------------------------ */
     /* Admin diagnostics                                                    */
     /* ------------------------------------------------------------------ */
 
     public static function get_diagnostics() {
         $self    = self::init();
-        // Force fresh fetch for diagnostics page (bypass cache)
-        $release = $self ? $self->fetch_latest_release( true ) : null;
+        // Usa o cache (6 h); "?force-check" na URL forca uma consulta nova.
+        $release = $self ? $self->fetch_latest_release() : null;
 
-        $remote_version = $self ? $self->release_version( $release ) : '—';
+        $remote_version = $self ? $self->release_version( $release ) : '';
         $zip_url        = ( $self && $release ) ? $self->release_zip_url( $release ) : '';
 
         return array(
             'repo'             => 'https://github.com/' . self::GITHUB_USER . '/' . self::GITHUB_REPO,
             'current_version'  => MLCP_VERSION,
             'remote_version'   => $remote_version !== '' ? $remote_version : '—',
-            'update_available' => ( $remote_version !== '' && version_compare( $remote_version, MLCP_VERSION, '>' ) ) ? 'Sim' : 'Não',
-            'source_status'    => $release ? 'GitHub Release detectado ✓' : 'Sem resposta da API — verifique token e conectividade',
-            'token_set'        => ( $self && $self->has_token() ) ? 'Sim' : 'Não',
+            'update_available' => ( $remote_version !== '' && $zip_url !== '' && version_compare( $remote_version, MLCP_VERSION, '>' ) ) ? 'Sim' : 'Não',
+            'source_status'    => $release ? 'GitHub Release detectado ✓' : 'Sem resposta da API — verifique a conectividade',
+            'token_set'        => 'Não necessário (repositório público de releases)',
             'zip_detected'     => $zip_url !== '' ? 'Sim' : 'Não',
             'zip_url'          => $zip_url !== '' ? 'asset detectado' : '—',
         );

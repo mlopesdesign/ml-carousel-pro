@@ -3,15 +3,16 @@
  * Plugin Name:       ML Banner Pro
  * Plugin URI:        https://mlopesdesign.com.br
  * Description:       Carrossel profissional com grupos, múltiplos shortcodes, ordenação administrativa, autoplay, analytics e integração segura com templates como Nicepage.
- * Version:           1.12.5
+ * Version:           1.12.6
  * Requires at least: 6.0
  * Requires PHP:      7.4
- * Tested up to:      6.7
+ * Tested up to:      6.8
  * Author:            Marcio Lopes
  * Author URI:        https://mlopesdesign.com.br
  * License:           GPLv2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       ml-carousel-pro
+ * Update URI:        https://github.com/mlopesdesign/ml-carousel-pro-releases
  */
 
 if (!defined('ABSPATH')) {
@@ -41,7 +42,7 @@ if ( defined( 'MLCP_VERSION' ) ) {
     return; // Another ML plugin with same prefix is already loaded — abort silently
 }
 
-define('MLCP_VERSION',       '1.12.5');
+define('MLCP_VERSION',       '1.12.6');
 define('MLCP_BASENAME',      plugin_basename( __FILE__ ) );
 define('MLCP_PLUGIN_DIR',    plugin_dir_path(__FILE__));
 define('MLCP_PLUGIN_URL',    plugin_dir_url(__FILE__));
@@ -115,7 +116,9 @@ final class ML_Carousel_Pro {
         // GitHub Updater — single update engine only.
         // Register immediately during plugin bootstrap so WordPress update checks
         // on Plugins/Updates screens do not run before our filters exist.
-        if ( is_admin() && class_exists( 'MLCP_GitHub_Updater' ) ) {
+        // Painel, WP-Cron e WP-CLI (o init() decide); antes so no painel, e a atualizacao
+        // automatica do WP (que roda no cron) nunca via a versao nova.
+        if ( class_exists( 'MLCP_GitHub_Updater' ) ) {
             MLCP_GitHub_Updater::init();
         }
     }

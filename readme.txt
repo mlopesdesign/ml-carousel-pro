@@ -2,9 +2,9 @@
 Contributors: marciolopes
 Tags: carousel, banner, slider, shortcode, groups
 Requires at least: 6.0
-Tested up to: 6.7
+Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.12.5
+Stable tag: 1.12.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -45,6 +45,13 @@ Sim. Cada grupo tem suas próprias configurações de layout, dimensões, autopl
 No modo Contain, a imagem é exibida inteira sem corte, ideal para logos ou imagens com proporções variadas.
 
 == Changelog ==
+
+= 1.12.6 =
+* Atualizacoes passam a vir do repositorio publico mlopesdesign/ml-carousel-pro-releases (somente ZIPs).
+* Atualizador: usa so o ZIP exato ml-carousel-pro-vX.Y.Z.zip da release (sem "qualquer ZIP" e sem zipball); informa "sem atualizacao" corretamente; icones na tela de atualizacoes.
+* Atualizador: tambem roda no WP-Cron (a atualizacao automatica do WordPress passa a enxergar versoes novas).
+* Atualizador: cache de 6 horas (antes 1 minuto, o que esgotava o limite da API do GitHub) e 15 minutos em falha.
+* uninstall.php: remove apenas caches e opcoes internas do atualizador; banners, grupos e estatisticas sao preservados.
 
 = 1.12.5 =
 * Corrigido o arraste que transformava as linhas em blocos vazios com bordas tracejadas
