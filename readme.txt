@@ -4,7 +4,7 @@ Tags: carousel, banner, slider, shortcode, groups
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.12.6
+Stable tag: 1.13.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -45,6 +45,13 @@ Sim. Cada grupo tem suas próprias configurações de layout, dimensões, autopl
 No modo Contain, a imagem é exibida inteira sem corte, ideal para logos ou imagens com proporções variadas.
 
 == Changelog ==
+
+= 1.13.0 =
+* Licenca pelo site tools.mlopesdesign.com.br (ML License Hub). O servidor antigo license.mlopesdesign.com.br nao e mais consultado.
+* Aceita a chave do Pacote Agencia (todos os plugins ML em varios sites).
+* Teste gratis de 30 dias por site. Quem ja usava o plugin recebe o teste automaticamente na primeira visita ao painel.
+* Sem teste ou licenca: o painel fica so para leitura (criar, editar, apagar, ordenar e configurar). Os banners publicados continuam no ar e nada e apagado.
+* Tela de licenca refeita: sem campos de servidor e Product ID.
 
 = 1.12.6 =
 * Atualizacoes passam a vir do repositorio publico mlopesdesign/ml-carousel-pro-releases (somente ZIPs).
