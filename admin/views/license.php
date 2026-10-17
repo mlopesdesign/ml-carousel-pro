@@ -5,16 +5,16 @@ if (!defined('ABSPATH')) {
 
 $notice = isset($_GET['mlcp_notice']) ? sanitize_text_field(wp_unslash($_GET['mlcp_notice'])) : '';
 $notice_type = isset($_GET['mlcp_notice_type']) ? sanitize_key(wp_unslash($_GET['mlcp_notice_type'])) : 'success';
-$days_left = $license_state['days_left'] !== '' && $license_state['days_left'] !== null ? (int) $license_state['days_left'] : null;
-$license_source = !empty($license_state['license_source']) ? $license_state['license_source'] : 'free';
-$premium_enabled = !empty($license_state['premium']);
-$badge_class = $premium_enabled ? 'is-green' : 'is-blue';
+$tone_class = array('full' => 'is-green', 'trial' => 'is-blue', 'free' => 'is-amber');
+$badge_class = $tone_class[$license['tone']] ?? 'is-blue';
+$days_left = $license['days_left'];
+$post_url = esc_url(admin_url('admin-post.php'));
 ?>
 <div class="wrap mlcp-wrap">
-    <?php echo MLCP_Helpers::render_admin_header('mlcp-license', 'ML Banner Pro', 'Licenciamento conectado ao ML License Hub com Trial, Free, Full e Vitalício no mesmo fluxo comercial.'); ?>
+    <?php echo MLCP_Helpers::render_admin_header('mlcp-license', 'ML Banner Pro', 'Licença pelo site tools.mlopesdesign.com.br: teste grátis de 30 dias por site, licença anual ou Pacote Agência.'); ?>
 
     <div class="mlcp-badges mlcp-badges-floating">
-        <span class="mlcp-badge <?php echo esc_attr($badge_class); ?>"><?php echo esc_html($plan_label); ?></span>
+        <span class="mlcp-badge <?php echo esc_attr($badge_class); ?>"><?php echo esc_html($license['label']); ?></span>
     </div>
 
     <?php if ($notice) : ?>
@@ -22,89 +22,85 @@ $badge_class = $premium_enabled ? 'is-green' : 'is-blue';
     <?php endif; ?>
 
     <div class="mlcp-kpi-grid">
-        <div class="mlcp-kpi-card"><span class="mlcp-kpi-label">Plano atual</span><strong class="mlcp-kpi-value"><?php echo esc_html($plan_label); ?></strong></div>
-        <div class="mlcp-kpi-card"><span class="mlcp-kpi-label">Status</span><strong class="mlcp-kpi-value"><?php echo esc_html($status_label); ?></strong></div>
-        <div class="mlcp-kpi-card"><span class="mlcp-kpi-label">Premium</span><strong class="mlcp-kpi-value"><?php echo esc_html($premium_enabled ? 'Liberado' : 'Free'); ?></strong></div>
-        <div class="mlcp-kpi-card"><span class="mlcp-kpi-label">Dias restantes</span><strong class="mlcp-kpi-value"><?php echo esc_html($days_left !== null ? $days_left : '—'); ?></strong></div>
+        <div class="mlcp-kpi-card"><span class="mlcp-kpi-label">Situação</span><strong class="mlcp-kpi-value"><?php echo esc_html($license['label']); ?></strong></div>
+        <div class="mlcp-kpi-card"><span class="mlcp-kpi-label">Plano</span><strong class="mlcp-kpi-value"><?php echo esc_html($license['plan_label']); ?></strong></div>
+        <div class="mlcp-kpi-card"><span class="mlcp-kpi-label">Válida até</span><strong class="mlcp-kpi-value"><?php echo esc_html($license['active'] && 'lifetime' !== strtolower($license['plan_label']) && $license['expires_label'] ? $license['expires_label'] : ($license['active'] ? 'Sem vencimento' : '—')); ?></strong></div>
+        <div class="mlcp-kpi-card"><span class="mlcp-kpi-label">Dias restantes</span><strong class="mlcp-kpi-value"><?php echo esc_html($license['active'] && null !== $days_left && $license['expires_label'] ? (string) (int) $days_left : '—'); ?></strong></div>
     </div>
 
     <div class="mlcp-license-layout">
         <section class="mlcp-card-panel mlcp-license-card">
             <div class="mlcp-card-head">
                 <h2>Licença</h2>
-                <span class="mlcp-pill is-soft"><?php echo esc_html($status_label); ?></span>
+                <span class="mlcp-pill is-soft"><?php echo esc_html($license['domain']); ?></span>
             </div>
-            <p class="mlcp-license-copy">Ative uma licença Full ou Vitalícia, ou sincronize o site com o Hub para receber Trial de 30 dias e depois degradar com elegância para Free.</p>
+            <p class="mlcp-license-copy"><?php echo esc_html($license['message']); ?></p>
 
-            <div class="mlcp-license-meta">
-                <div><span>Produto</span><strong><?php echo esc_html(!empty($license_state['product_name']) ? $license_state['product_name'] : $license_product_name); ?></strong></div>
-                <div><span>Product ID</span><strong><?php echo esc_html($license_product_id); ?></strong></div>
-                <div><span>Domínio atual</span><strong><?php echo esc_html($license_domain); ?></strong></div>
-                <div><span>Site fingerprint</span><strong style="word-break:break-all"><?php echo esc_html($site_fingerprint); ?></strong></div>
-                <div><span>Origem</span><strong><?php echo esc_html($license_source); ?></strong></div>
-                <div><span>Mensagem</span><strong><?php echo esc_html($license_state['message']); ?></strong></div>
-                <div><span>Última validação</span><strong><?php echo esc_html($license_state['last_validated_at'] ? $license_state['last_validated_at'] : '—'); ?></strong></div>
-                <div><span>Expira em</span><strong><?php echo esc_html($license_state['expires_at'] ? $license_state['expires_at'] : '—'); ?></strong></div>
-            </div>
-
-            <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" class="mlcp-license-form">
-                <?php wp_nonce_field('mlcp_activate_license'); ?>
-                <input type="hidden" name="action" value="mlcp_activate_license">
-                <div class="mlcp-field-grid mlcp-field-grid-2">
-                    <label class="mlcp-field">
-                        <span>Servidor de licença</span>
-                        <input type="url" name="license_server_url" value="<?php echo esc_attr($license_server_url); ?>" placeholder="https://license.mlopesdesign.com.br/api/license.php">
-                    </label>
-                    <label class="mlcp-field">
-                        <span>Product ID</span>
-                        <input type="text" name="license_product_id" value="<?php echo esc_attr($license_product_id); ?>" placeholder="ml-carousel-pro">
-                    </label>
+            <?php if ('license' === $license['mode'] && '' !== $license['key_masked']) : ?>
+                <div class="mlcp-license-meta">
+                    <div><span>Chave neste site</span><strong><?php echo esc_html($license['key_masked']); ?></strong></div>
                 </div>
-
-                <label class="mlcp-field mlcp-field-full">
-                    <span>Serial / License Key</span>
-                    <input type="text" name="license_key" value="<?php echo esc_attr($license_state['license_key']); ?>" placeholder="MLI-XXXXX-XXXXX-XXXXX-XXXXX">
-                </label>
-
-                <div class="mlcp-license-actions">
-                    <button type="submit" class="button button-primary">Ativar licença</button>
+                <div class="mlcp-license-inline-actions">
+                    <form method="post" action="<?php echo $post_url; ?>">
+                        <?php wp_nonce_field('mlcp_sync_license'); ?>
+                        <input type="hidden" name="action" value="mlcp_sync_license">
+                        <input type="hidden" name="mlcp_op" value="check">
+                        <button type="submit" class="button button-primary">Conferir agora</button>
+                    </form>
+                    <form method="post" action="<?php echo $post_url; ?>">
+                        <?php wp_nonce_field('mlcp_remove_license'); ?>
+                        <input type="hidden" name="action" value="mlcp_remove_license">
+                        <button type="submit" class="button">Remover deste site</button>
+                    </form>
                 </div>
-            </form>
-
-            <div class="mlcp-license-inline-actions">
-                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-                    <?php wp_nonce_field('mlcp_sync_license'); ?>
-                    <input type="hidden" name="action" value="mlcp_sync_license">
-                    <input type="hidden" name="license_server_url" value="<?php echo esc_attr($license_server_url); ?>">
-                    <input type="hidden" name="license_product_id" value="<?php echo esc_attr($license_product_id); ?>">
-                    <input type="hidden" name="license_key" value="<?php echo esc_attr($license_state['license_key']); ?>">
-                    <button type="submit" class="button"><?php echo esc_html($license_state['license_key'] !== '' ? 'Validar agora' : 'Iniciar / sincronizar Trial'); ?></button>
+            <?php else : ?>
+                <form method="post" action="<?php echo $post_url; ?>" class="mlcp-license-form">
+                    <?php wp_nonce_field('mlcp_activate_license'); ?>
+                    <input type="hidden" name="action" value="mlcp_activate_license">
+                    <label class="mlcp-field mlcp-field-full">
+                        <span>Chave da licença</span>
+                        <input type="text" name="license_key" value="" placeholder="Cole aqui a sua chave" autocomplete="off" spellcheck="false">
+                    </label>
+                    <div class="mlcp-license-actions">
+                        <button type="submit" class="button button-primary">Ativar licença</button>
+                    </div>
                 </form>
-
-                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-                    <?php wp_nonce_field('mlcp_remove_license'); ?>
-                    <input type="hidden" name="action" value="mlcp_remove_license">
-                    <button type="submit" class="button">Remover licença deste site</button>
-                </form>
-            </div>
+                <div class="mlcp-license-inline-actions">
+                    <?php if ($license['can_start_trial']) : ?>
+                        <form method="post" action="<?php echo $post_url; ?>">
+                            <?php wp_nonce_field('mlcp_sync_license'); ?>
+                            <input type="hidden" name="action" value="mlcp_sync_license">
+                            <input type="hidden" name="mlcp_op" value="trial">
+                            <button type="submit" class="button">Começar teste grátis de 30 dias</button>
+                        </form>
+                    <?php elseif ($license['is_trial']) : ?>
+                        <form method="post" action="<?php echo $post_url; ?>">
+                            <?php wp_nonce_field('mlcp_sync_license'); ?>
+                            <input type="hidden" name="action" value="mlcp_sync_license">
+                            <input type="hidden" name="mlcp_op" value="check">
+                            <button type="submit" class="button">Conferir agora</button>
+                        </form>
+                    <?php endif; ?>
+                    <a class="button" href="<?php echo esc_url(MLCP_License_Manager::BUY_URL); ?>" target="_blank" rel="noopener">Comprar licença</a>
+                    <a class="button" href="<?php echo esc_url(MLCP_License_Manager::ACCOUNT_URL); ?>" target="_blank" rel="noopener">Minha conta</a>
+                </div>
+            <?php endif; ?>
         </section>
 
         <section class="mlcp-card-panel mlcp-license-plans">
             <div class="mlcp-card-head">
-                <h2>Planos</h2>
-                <span class="mlcp-pill is-soft">Free / Trial / Full / Vitalício</span>
+                <h2>Como funciona</h2>
+                <span class="mlcp-pill is-soft">tools.mlopesdesign.com.br</span>
             </div>
             <table class="widefat striped mlcp-plan-table">
-                <thead><tr><th>Recurso</th><th>Free</th><th>Trial</th><th>Full / Vitalício</th></tr></thead>
                 <tbody>
-                    <tr><td>Itens e grupos do carrossel</td><td>Sim</td><td>Sim</td><td>Sim</td></tr>
-                    <tr><td>Shortcodes e ordenação</td><td>Sim</td><td>Sim</td><td>Sim</td></tr>
-                    <tr><td>Janela Full de avaliação</td><td>Não</td><td>30 dias</td><td>—</td></tr>
-                    <tr><td>Premium liberado</td><td>Não</td><td>Sim</td><td>Sim</td></tr>
-                    <tr><td>Degradação elegante para Free</td><td>—</td><td>Sim</td><td>—</td></tr>
+                    <tr><td><strong>Teste grátis</strong></td><td>30 dias com tudo liberado, uma vez por site. Reinstalar não reinicia.</td></tr>
+                    <tr><td><strong>Licença anual</strong></td><td>Vale em 1 site. Para usar em outro, remova deste site.</td></tr>
+                    <tr><td><strong>Pacote Agência</strong></td><td>Uma chave para todos os plugins ML em 5, 10 ou 50 sites.</td></tr>
+                    <tr><td><strong>Sem licença</strong></td><td>Os banners publicados continuam no ar. Só o painel fica bloqueado para criar, editar e apagar.</td></tr>
                 </tbody>
             </table>
-            <p class="mlcp-license-note">O Trial é controlado no servidor de licença. Reinstalar o plugin não concede um novo período no mesmo site.</p>
+            <p class="mlcp-license-note">A licença é conferida uma vez por dia. Sem internet, o site continua liberado por até 7 dias.</p>
         </section>
         <section class="mlcp-card-panel">
             <div class="mlcp-card-head">

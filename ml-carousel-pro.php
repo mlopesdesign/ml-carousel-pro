@@ -3,7 +3,7 @@
  * Plugin Name:       ML Banner Pro
  * Plugin URI:        https://mlopesdesign.com.br
  * Description:       Carrossel profissional com grupos, múltiplos shortcodes, ordenação administrativa, autoplay, analytics e integração segura com templates como Nicepage.
- * Version:           1.12.6
+ * Version:           1.13.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Tested up to:      6.8
@@ -42,7 +42,7 @@ if ( defined( 'MLCP_VERSION' ) ) {
     return; // Another ML plugin with same prefix is already loaded — abort silently
 }
 
-define('MLCP_VERSION',       '1.12.6');
+define('MLCP_VERSION',       '1.13.0');
 define('MLCP_BASENAME',      plugin_basename( __FILE__ ) );
 define('MLCP_PLUGIN_DIR',    plugin_dir_path(__FILE__));
 define('MLCP_PLUGIN_URL',    plugin_dir_url(__FILE__));
@@ -62,6 +62,7 @@ require_once MLCP_PLUGIN_DIR . 'includes/class-mlcp-admin.php';
 require_once MLCP_PLUGIN_DIR . 'includes/class-mlcp-meta-boxes.php';
 require_once MLCP_PLUGIN_DIR . 'includes/class-mlcp-shortcodes.php';
 require_once MLCP_PLUGIN_DIR . 'includes/class-mlcp-license-manager.php';
+MLCP_License_Manager::boot();
 require_once MLCP_PLUGIN_DIR . 'includes/class-mlcp-github-updater.php';
 
 register_activation_hook(__FILE__, array('MLCP_Install', 'activate'));

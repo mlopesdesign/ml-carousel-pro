@@ -284,7 +284,7 @@ class MLCP_Helpers {
             return array('is_plugin' => true, 'active' => 'mlcp-settings', 'title' => 'ML Banner Pro', 'subtitle' => 'Configurações globais do plugin.');
         }
         if ($page === 'mlcp-license') {
-            return array('is_plugin' => true, 'active' => 'mlcp-license', 'title' => 'ML Banner Pro', 'subtitle' => 'Licenciamento conectado ao ML License Hub com Trial, Free, Full e Vitalício no mesmo fluxo comercial.');
+            return array('is_plugin' => true, 'active' => 'mlcp-license', 'title' => 'ML Banner Pro', 'subtitle' => 'Licença pelo site tools.mlopesdesign.com.br: teste grátis de 30 dias por site, licença anual ou Pacote Agência.');
         }
         if ($page === 'mlcp-analytics') {
             return array('is_plugin' => true, 'active' => 'mlcp-analytics', 'title' => 'ML Banner Pro', 'subtitle' => 'Desempenho dos banners: visualizações, cliques e CTR.');

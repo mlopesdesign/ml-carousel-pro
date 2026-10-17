@@ -70,16 +70,8 @@ class MLCP_Admin {
     }
 
     public static function render_license() {
-        $manager              = new MLCP_License_Manager();
-        $summary              = $manager->get_license_summary();
-        $license_state        = $summary['state'];
-        $license_product_name = $summary['product_name'];
-        $license_product_id   = $summary['product_id'];
-        $license_server_url   = $summary['server_url'];
-        $license_domain       = $summary['domain'];
-        $site_fingerprint     = $summary['site_fingerprint'];
-        $plan_label           = $summary['plan_label'];
-        $status_label         = $summary['status_label'];
+        $manager = new MLCP_License_Manager();
+        $license = $manager->get_license_summary();
         include MLCP_PLUGIN_DIR . 'admin/views/license.php';
     }
 
@@ -101,6 +93,7 @@ class MLCP_Admin {
     }
 
     public static function save_settings() {
+        MLCP_License_Manager::guard_write();
         if (!current_user_can('manage_options')) {
             wp_die(esc_html__('Acesso negado.', MLCP_TEXT_DOMAIN));
         }
@@ -207,6 +200,7 @@ class MLCP_Admin {
     }
 
     public static function handle_duplicate_item() {
+        MLCP_License_Manager::guard_write();
         $post_id = isset($_GET['post']) ? (int) $_GET['post'] : 0;
         if (!$post_id) {
             wp_die(esc_html__('Item inválido.', MLCP_TEXT_DOMAIN));
@@ -271,6 +265,7 @@ class MLCP_Admin {
     }
 
     public static function handle_move_item() {
+        MLCP_License_Manager::guard_write();
         $post_id   = isset($_GET['post']) ? (int) $_GET['post'] : 0;
         $direction = isset($_GET['direction']) ? sanitize_key(wp_unslash($_GET['direction'])) : '';
 
@@ -389,6 +384,7 @@ class MLCP_Admin {
     }
 
     public static function handle_reset_analytics() {
+        MLCP_License_Manager::guard_write();
         if (!current_user_can('manage_options')) {
             wp_die(esc_html__('Acesso negado.', MLCP_TEXT_DOMAIN));
         }
@@ -487,6 +483,7 @@ class MLCP_Admin {
     }
 
     public static function ajax_save_sort_group() {
+        MLCP_License_Manager::guard_write(true);
         check_ajax_referer('mlcp_admin_nonce', 'nonce');
 
         if (!current_user_can('edit_posts')) {
@@ -505,6 +502,7 @@ class MLCP_Admin {
     }
 
     public static function ajax_save_items_order() {
+        MLCP_License_Manager::guard_write(true);
         check_ajax_referer('mlcp_admin_nonce', 'nonce');
 
         if (!current_user_can('edit_posts')) {
