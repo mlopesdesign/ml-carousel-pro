@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - 'v*.*.*'
+  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -18,7 +20,10 @@ jobs:
 
       - name: Set version from tag
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then V="${GITHUB_REF_NAME#v}"; else
+            V=$(grep -E '^\s*\*\s*Version:' ml-carousel-pro.php | head -1 | sed -E 's/.*Version:\s*([0-9.]+).*/\1/'); fi
+          echo "VERSION=$V" >> $GITHUB_OUTPUT
 
       - name: Build plugin ZIP
         run: |
@@ -52,7 +57,14 @@ jobs:
           echo "ZIP created:"
           unzip -l ml-carousel-pro-v${{ steps.version.outputs.VERSION }}.zip | head -5
 
+      - name: ML Release Gate (plugin sozinho, identidade, atualizacao na mesma pasta)
+        # Trava obrigatoria: se reprovar, o release NAO e criado e nada chega aos clientes.
+        env:
+          GATE_MODE: ${{ startsWith(github.ref, 'refs/tags/') && 'release' || 'pr' }}
+        run: bash .github/gate/gate.sh ml-carousel-pro ml-carousel-pro-v${{ steps.version.outputs.VERSION }}.zip
+
       - name: Create GitHub Release and attach ZIP
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           name: "ML Banner Pro v${{ steps.version.outputs.VERSION }}"
