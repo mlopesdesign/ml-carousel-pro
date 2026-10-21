@@ -10,7 +10,7 @@ SLUG="${1:?slug}"; ZIP="$(readlink -f "${2:?zip}")"
 WORK="$(mktemp -d)"; FAIL=0; PORT="${PORT:-8765}"
 WPCLI="${WPCLI:-$WORK/wp-cli.phar}"
 ok(){ echo "  ✔ $*"; }
-bad(){ echo "  ✘ $*"; FAIL=1; }
+bad(){ echo "  ✘ $*"; echo "::error::$*"; FAIL=1; }
 hdr(){ unzip -p "$1" "$SLUG/$SLUG.php" | head -40 | grep -iE "^[[:space:]/*#@]*$2:" | head -1 | sed -E "s/.*$2:[[:space:]]*//I" | tr -d '\r' | sed 's/[[:space:]]*$//'; }
 
 echo "== 1. Estrutura do ZIP"
