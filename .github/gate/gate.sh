@@ -48,6 +48,8 @@ echo "== 3. WordPress limpo, plugin SOZINHO"
 WP="$WORK/wp"; mkdir -p "$WP"
 wp(){ php -d memory_limit=512M "$WPCLI" --allow-root --path="$WP" "$@"; }
 if [ -n "${WP_SRC:-}" ]; then cp -r "$WP_SRC"/. "$WP"/; rm -f "$WP/wp-config.php"; rm -rf "$WP/wp-content/plugins"/* "$WP/wp-content/database" "$WP/wp-content/db.php" "$WP/wp-content/debug.log"; else wp core download --locale=pt_BR --quiet || wp core download --quiet; fi
+# WordPress limpo de verdade: sem os plugins que vêm junto com o núcleo (Akismet, Hello Dolly).
+find "$WP/wp-content/plugins" -mindepth 1 -maxdepth 1 ! -name index.php -exec rm -rf {} +
 if [ -n "${SQLITE_SRC:-}" ]; then cp -r "$SQLITE_SRC" "$WP/wp-content/plugins/sqlite-database-integration"; else
   curl -sSLo "$WORK/sq.zip" https://downloads.wordpress.org/plugin/sqlite-database-integration.zip && unzip -q "$WORK/sq.zip" -d "$WP/wp-content/plugins/"; fi
 sed -e "s#{SQLITE_IMPLEMENTATION_FOLDER_PATH}#$WP/wp-content/plugins/sqlite-database-integration#" -e "s#{SQLITE_PLUGIN}#sqlite-database-integration/load.php#" \
@@ -87,7 +89,7 @@ if [ -n "$PREV" ] && [ -f "$PREV" ]; then
   WASACTIVE=0; wp plugin is-active "$SLUG" 2>/dev/null && WASACTIVE=1
   echo "-- atualização $OLDV → $NEWV pelo instalador do WordPress"
   wp plugin install "$ZIP" --force --quiet 2>"$WORK/up.err" || bad "instalação da atualização falhou: $(head -c 300 "$WORK/up.err")"
-  dirs=$(ls "$PL" | grep -v '^sqlite-database-integration$' | tr '\n' ' ')
+  dirs=$(ls "$PL" | grep -vxE 'sqlite-database-integration|index\.php' | tr '\n' ' ')
   [ "$dirs" = "$SLUG " ] && ok "atualizou na mesma pasta ($SLUG/), sem instalação nova" || bad "pastas após atualização: $dirs"
   [ "$(wp plugin get "$SLUG" --field=version 2>/dev/null)" = "$NEWV" ] && ok "versão instalada $NEWV" || bad "versão instalada difere"
   if [ $WASACTIVE -eq 1 ]; then wp plugin is-active "$SLUG" 2>/dev/null && ok "continuou ativo após atualizar" || bad "ficou inativo após atualizar"; fi
