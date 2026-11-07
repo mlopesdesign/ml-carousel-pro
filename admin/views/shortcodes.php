@@ -15,6 +15,16 @@
     </div>
 
     <div class="mlcp-card-panel">
+        <h2>Template Agenda</h2>
+        <p>Mostra o grupo como agenda: data grande, título, subtítulo (horário) e cartaz, em ordem de data. Eventos passados somem sozinhos. Com mais itens que <code>visible</code>, a lista sobe sozinha (pausa ao passar o mouse). O cartaz abre em tela cheia; com link, o título leva ao link.</p>
+        <div class="mlcp-inline-shortcode mlcp-inline-shortcode--large">
+            <code>[ml_carousel group="eventos" template="agenda" visible="3" interval="4000"]</code>
+            <button type="button" class="button mlcp-copy-shortcode" data-shortcode='[ml_carousel group="eventos" template="agenda" visible="3" interval="4000"]'>Copiar</button>
+        </div>
+        <p>Campo <strong>Data</strong> do banner: AAAA-MM-DD ou DD-MM-AAAA (vazio = usa a data de expiração).</p>
+    </div>
+
+    <div class="mlcp-card-panel">
         <h2>Shortcodes por grupo</h2>
         <?php if ($groups && !is_wp_error($groups)) : ?>
             <table class="widefat striped">

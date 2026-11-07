@@ -108,3 +108,23 @@
   #mlcp-lb-img{max-width:98vw;max-height:85vh}
   #mlcp-lb-close{top:10px;right:10px;width:38px;height:38px;font-size:24px}
 }
+
+/* ===== Template "agenda" (1.14.0): [ml_carousel group="eventos" template="agenda" visible="3"] ===== */
+.mlcp-agenda{--mlcp-ag-accent:#A80F17;--mlcp-ag-ink:inherit;--mlcp-ag-muted:currentColor;--mlcp-ag-rule:rgba(128,128,128,.28);--mlcp-ag-poster-w:96px;--mlcp-ag-poster-h:126px;--mlcp-ag-pad:14px;color:var(--mlcp-ag-ink)}
+.mlcp-agenda .mlcp-ag-viewport{overflow:hidden;position:relative}
+.mlcp-agenda .mlcp-ag-list{list-style:none;margin:0;padding:0;will-change:transform}
+.mlcp-agenda .mlcp-ag-row{display:grid;grid-template-columns:64px minmax(0,1fr) var(--mlcp-ag-poster-w);gap:16px;align-items:center;padding:var(--mlcp-ag-pad) 0;border-bottom:1px solid var(--mlcp-ag-rule);margin:0;box-sizing:border-box}
+.mlcp-agenda .mlcp-ag-day{text-align:center;border-right:1px solid var(--mlcp-ag-rule);padding-right:12px}
+.mlcp-agenda .mlcp-ag-day b{display:block;font-size:40px;line-height:1;font-weight:600;color:var(--mlcp-ag-accent);font-variant-numeric:tabular-nums}
+.mlcp-agenda .mlcp-ag-day span{display:block;margin-top:4px;font-size:11px;line-height:1;font-weight:500;letter-spacing:.12em;text-transform:uppercase;opacity:.7}
+.mlcp-agenda .mlcp-ag-txt{min-width:0}
+.mlcp-agenda .mlcp-ag-title{display:block;font-size:17px;line-height:1.25;font-weight:400;color:inherit;text-decoration:none;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.mlcp-agenda a.mlcp-ag-title:hover{opacity:.72}
+.mlcp-agenda .mlcp-ag-sub{display:block;margin-top:3px;font-size:14px;opacity:.7}
+.mlcp-agenda .mlcp-ag-poster{display:block;width:var(--mlcp-ag-poster-w);height:var(--mlcp-ag-poster-h);overflow:hidden;cursor:zoom-in;background:rgba(128,128,128,.15)}
+.mlcp-agenda .mlcp-ag-poster img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.mlcp-agenda .mlcp-ag-poster:hover img{transform:scale(1.05)}
+.mlcp-agenda .mlcp-ag-poster:focus-visible,.mlcp-agenda a.mlcp-ag-title:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+.mlcp-agenda .mlcp-ag-poster.is-empty{background:transparent;cursor:default}
+@media (max-width:640px){.mlcp-agenda{--mlcp-ag-poster-w:80px;--mlcp-ag-poster-h:105px}.mlcp-agenda .mlcp-ag-row{grid-template-columns:56px minmax(0,1fr) var(--mlcp-ag-poster-w);gap:12px}}
+@media (prefers-reduced-motion:reduce){.mlcp-agenda.is-scrolling .mlcp-ag-viewport{overflow-y:auto}}

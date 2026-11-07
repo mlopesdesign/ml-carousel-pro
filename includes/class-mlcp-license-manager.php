@@ -21,13 +21,15 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// O cliente de licença é carregado ANTES da guarda abaixo: o PHP declara a classe deste
-// arquivo já na compilação, então class_exists() é sempre verdadeiro aqui e o return
-// impediria o carregamento do cliente (erro fatal quando nenhum outro plugin ML o carregou).
+// 1.13.1: o cliente de licença é carregado ANTES de qualquer saída antecipada.
+// Na 1.13.0 o `return` vinha antes do require_once; como o PHP declara a classe abaixo
+// já na compilação do arquivo, o class_exists() era sempre verdadeiro, o require_once
+// nunca rodava e o site caía com "Class ML_License_Client_V2 not found" quando nenhum
+// outro plugin ML tinha carregado o cliente antes. A classe agora é declarada de forma
+// condicional (não é içada), então a proteção contra declaração dupla funciona de verdade.
 require_once __DIR__ . '/class-ml-license-client.php';
 
-if ( class_exists( 'MLCP_License_Manager' ) ) { return; }
-
+if ( ! class_exists( 'MLCP_License_Manager', false ) ) :
 
 class MLCP_License_Manager {
     const API_BASE    = 'https://tools.mlopesdesign.com.br/wp-json/mllh/v1';
@@ -286,3 +288,5 @@ class MLCP_License_Manager {
         exit;
     }
 }
+
+endif;

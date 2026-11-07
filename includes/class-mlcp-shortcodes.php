@@ -27,6 +27,9 @@ class MLCP_Shortcodes {
             'class' => '',
             'overlay_enabled' => '',
             'overlay_opacity' => '',
+            'template' => '',
+            'visible' => '',
+            'interval' => '',
         ), $atts, 'ml_carousel');
 
         $settings = MLCP_Helpers::get_settings();
@@ -81,6 +84,10 @@ class MLCP_Shortcodes {
         $items = get_posts($query_args);
         if (!$items) {
             return '';
+        }
+
+        if (sanitize_key((string) $atts['template']) === 'agenda') {
+            return self::render_agenda($items, $atts);
         }
 
         $default_block_width = max(1, (int) ($settings['default_width_value'] ?? 1140)) . MLCP_Helpers::normalize_size_unit($settings['default_width_unit'] ?? 'px');
@@ -206,5 +213,86 @@ class MLCP_Shortcodes {
         </div>
         <?php
         return ob_get_clean();
+    }
+
+    /**
+     * Data do item (Y-m-d) a partir do campo Data (AAAA-MM-DD, DD-MM-AAAA ou DD/MM/AAAA) ou da expiração.
+     */
+    private static function item_date(array $meta): string {
+        $raw = trim((string) $meta['date']);
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $raw, $m)) {
+            return $m[1] . '-' . $m[2] . '-' . $m[3];
+        }
+        if (preg_match('/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/', $raw, $m)) {
+            return sprintf('%04d-%02d-%02d', (int) $m[3], (int) $m[2], (int) $m[1]);
+        }
+        if (!empty($meta['expire_at'])) {
+            return wp_date('Y-m-d', (int) $meta['expire_at']);
+        }
+        return '';
+    }
+
+    /**
+     * Template "agenda": lista de eventos (data grande, título, subtítulo, cartaz).
+     * Mostra "visible" linhas; se houver mais, rola sozinho para cima (pausa no mouse/foco,
+     * respeita "reduzir movimento"). Cartaz abre no lightbox do plugin; com link, o título leva ao link.
+     * Uso: [ml_carousel group="eventos" template="agenda" visible="3" interval="4000"]
+     */
+    private static function render_agenda(array $items, array $atts): string {
+        $visible  = max(1, min(12, (int) ($atts['visible'] !== '' ? $atts['visible'] : 3)));
+        $interval = max(2000, min(20000, (int) ($atts['interval'] !== '' ? $atts['interval'] : 4000)));
+        $today    = wp_date('Y-m-d');
+        $rows     = array();
+        foreach ($items as $item) {
+            $meta = MLCP_Helpers::get_item_meta($item->ID);
+            $date = self::item_date($meta);
+            if ($date !== '' && $date < $today) {
+                continue;
+            }
+            $rows[] = array('item' => $item, 'meta' => $meta, 'date' => $date);
+        }
+        if (!$rows) {
+            return '';
+        }
+        usort($rows, static function ($a, $b) {
+            $da = $a['date'] !== '' ? $a['date'] : '9999-12-31';
+            $db = $b['date'] !== '' ? $b['date'] : '9999-12-31';
+            return strcmp($da, $db);
+        });
+
+        wp_enqueue_style('mlcp-front');
+        wp_enqueue_script('mlcp-front');
+
+        $out = '<div class="mlcp-agenda ' . esc_attr(trim((string) $atts['class'])) . '" data-mlcp-agenda data-visible="' . esc_attr((string) $visible) . '" data-interval="' . esc_attr((string) $interval) . '" style="--mlcp-ag-visible:' . (int) $visible . '">';
+        $out .= '<div class="mlcp-ag-viewport"><ul class="mlcp-ag-list" role="list">';
+        foreach ($rows as $r) {
+            $item  = $r['item'];
+            $meta  = $r['meta'];
+            $title = get_the_title($item->ID);
+            $ts    = $r['date'] !== '' ? (int) strtotime($r['date'] . ' 12:00:00') : 0;
+            $img   = MLCP_Helpers::get_image_url($item->ID, 'medium');
+            $full  = MLCP_Helpers::get_image_url($item->ID, 'full');
+            $full  = $full ? $full : $img;
+            $link  = trim((string) $meta['link']);
+            $has_link = $link !== '' && $link !== '#';
+            $target = !empty($meta['new_tab']) ? ' target="_blank" rel="noopener noreferrer"' : '';
+            $out .= '<li class="mlcp-ag-row" data-mlcp-item-id="' . esc_attr((string) $item->ID) . '">';
+            $out .= '<span class="mlcp-ag-day">' . ($ts ? '<b>' . esc_html(wp_date('d', $ts)) . '</b><span>' . esc_html(rtrim(wp_date('M', $ts), '.')) . '</span>' : '') . '</span>';
+            $out .= '<span class="mlcp-ag-txt">';
+            $out .= $has_link ? '<a class="mlcp-ag-title" href="' . esc_url($link) . '"' . $target . '>' . esc_html($title) . '</a>' : '<b class="mlcp-ag-title">' . esc_html($title) . '</b>';
+            if (trim((string) $meta['subtitle']) !== '') {
+                $out .= '<span class="mlcp-ag-sub">' . esc_html($meta['subtitle']) . '</span>';
+            }
+            $out .= '</span>';
+            if ($img) {
+                $alt = 'Cartaz: ' . $title . ($ts ? ', ' . wp_date('j \\d\\e F', $ts) : '');
+                $out .= '<span class="mlcp-ag-poster mlcp-link--lightbox" role="button" tabindex="0" data-mlcp-track-click="1" data-mlcp-item-id="' . esc_attr((string) $item->ID) . '" data-mlcp-lightbox="' . esc_url($full) . '" data-mlcp-lightbox-alt="' . esc_attr($alt) . '" aria-label="' . esc_attr('Ver cartaz: ' . $title) . '"><img src="' . esc_url($img) . '" alt="" loading="lazy" decoding="async"></span>';
+            } else {
+                $out .= '<span class="mlcp-ag-poster is-empty"></span>';
+            }
+            $out .= '</li>';
+        }
+        $out .= '</ul></div></div>';
+        return $out;
     }
 }

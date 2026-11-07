@@ -4,7 +4,7 @@ Tags: carousel, banner, slider, shortcode, groups
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.13.1
+Stable tag: 1.14.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -46,8 +46,12 @@ No modo Contain, a imagem é exibida inteira sem corte, ideal para logos ou imag
 
 == Changelog ==
 
+= 1.14.0 =
+* Novo template Agenda: [ml_carousel group="eventos" template="agenda" visible="3" interval="4000"]. Data grande, título, subtítulo e cartaz em ordem de data; eventos passados somem; com mais itens que visible, a lista sobe sozinha (pausa no mouse/foco, respeita reduzir movimento). Cartaz abre no lightbox do plugin; com link, o título leva ao link.
+
 = 1.13.1 =
-* Corrigido (crítico): com o plugin ativo sozinho (sem outro plugin ML que carregasse o cliente de licença antes), o site inteiro caía com erro fatal "Class ML_License_Client_V2 not found". O cliente de licença agora é carregado sempre. Nenhuma mudança de comportamento.
+* Corrigido (critico): a 1.13.0 derrubava o site inteiro (erro fatal "Class ML_License_Client_V2 not found") quando nenhum outro plugin ML com o cliente de licenca estava ativo e carregado antes. O arquivo do gerenciador de licenca saia antes de carregar o cliente. Agora o cliente e carregado sempre, antes de qualquer verificacao, e a classe do gerenciador e declarada de forma condicional.
+* Nenhuma mudanca de comportamento: licenca, teste gratis de 30 dias, banners, grupos, shortcodes, analytics e configuracoes continuam iguais. Nenhum dado e apagado.
 
 = 1.13.0 =
 * Licenca pelo site tools.mlopesdesign.com.br (ML License Hub). O servidor antigo license.mlopesdesign.com.br nao e mais consultado.

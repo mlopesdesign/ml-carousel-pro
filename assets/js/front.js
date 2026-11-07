@@ -391,4 +391,46 @@
     bootCarousels();
   });
 
+
+  /* =============================================
+     TEMPLATE AGENDA (1.14.0): rolagem automatica para cima
+     Mostra N linhas; com mais itens, sobe uma linha a cada intervalo.
+     Pausa com mouse/foco; sem animacao se o visitante pede menos movimento.
+  ============================================= */
+  function initAgenda(root){
+    if (root.__mlcpAg) return; root.__mlcpAg = 1;
+    var vp = root.querySelector('.mlcp-ag-viewport'), list = root.querySelector('.mlcp-ag-list');
+    if (!vp || !list) return;
+    var visible = Math.max(1, parseInt(root.getAttribute('data-visible'), 10) || 3);
+    var interval = Math.max(2000, parseInt(root.getAttribute('data-interval'), 10) || 4000);
+    var rows = list.children;
+    if (rows.length <= visible) return;
+    root.classList.add('is-scrolling');
+    function fit(){ var h = 0; for (var i = 0; i < visible && i < rows.length; i++) { h += rows[i].getBoundingClientRect().height; } if (h > 0) { vp.style.height = Math.round(h) + 'px'; } }
+    fit(); window.addEventListener('resize', fit);
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var paused = false, busy = false;
+    root.addEventListener('mouseenter', function(){ paused = true; });
+    root.addEventListener('mouseleave', function(){ paused = false; });
+    root.addEventListener('focusin', function(){ paused = true; });
+    root.addEventListener('focusout', function(){ paused = false; });
+    setInterval(function(){
+      if (paused || busy || document.hidden) return;
+      var first = rows[0]; if (!first) return;
+      busy = true;
+      var step = first.getBoundingClientRect().height;
+      list.style.transition = 'transform .6s ease';
+      list.style.transform = 'translateY(-' + step + 'px)';
+      setTimeout(function(){
+        list.style.transition = 'none';
+        list.appendChild(first);
+        list.style.transform = 'translateY(0)';
+        void list.offsetHeight;
+        busy = false;
+      }, 650);
+    }, interval);
+  }
+  function initAgendas(){ document.querySelectorAll('[data-mlcp-agenda]').forEach(initAgenda); }
+  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', initAgendas); } else { initAgendas(); }
+  window.addEventListener('load', function(){ document.querySelectorAll('[data-mlcp-agenda]').forEach(function(r){ var vp=r.querySelector('.mlcp-ag-viewport'); if (r.classList.contains('is-scrolling') && vp) { var rows=r.querySelector('.mlcp-ag-list').children, v=parseInt(r.getAttribute('data-visible'),10)||3, h=0; for (var i=0;i<v&&i<rows.length;i++){h+=rows[i].getBoundingClientRect().height;} if(h>0){vp.style.height=Math.round(h)+'px';} } }); });
 })();
