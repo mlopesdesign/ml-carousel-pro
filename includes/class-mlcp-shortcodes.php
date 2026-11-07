@@ -30,6 +30,7 @@ class MLCP_Shortcodes {
             'template' => '',
             'visible' => '',
             'interval' => '',
+            'accent' => '',
         ), $atts, 'ml_carousel');
 
         $settings = MLCP_Helpers::get_settings();
@@ -236,7 +237,8 @@ class MLCP_Shortcodes {
      * Template "agenda": lista de eventos (data grande, título, subtítulo, cartaz).
      * Mostra "visible" linhas; se houver mais, rola sozinho para cima (pausa no mouse/foco,
      * respeita "reduzir movimento"). Cartaz abre no lightbox do plugin; com link, o título leva ao link.
-     * Uso: [ml_carousel group="eventos" template="agenda" visible="3" interval="4000"]
+     * Uso: [ml_carousel group="eventos" template="agenda" visible="3" interval="4000" accent="#A80F17"]
+     * accent = cor da data (opcional; o tema/builder também pode trocar pela variável --mlcp-ag-accent).
      */
     private static function render_agenda(array $items, array $atts): string {
         $visible  = max(1, min(12, (int) ($atts['visible'] !== '' ? $atts['visible'] : 3)));
@@ -263,7 +265,7 @@ class MLCP_Shortcodes {
         wp_enqueue_style('mlcp-front');
         wp_enqueue_script('mlcp-front');
 
-        $out = '<div class="mlcp-agenda ' . esc_attr(trim((string) $atts['class'])) . '" data-mlcp-agenda data-visible="' . esc_attr((string) $visible) . '" data-interval="' . esc_attr((string) $interval) . '" style="--mlcp-ag-visible:' . (int) $visible . '">';
+        $out = '<div class="mlcp-agenda ' . esc_attr(trim((string) $atts['class'])) . '" data-mlcp-agenda data-visible="' . esc_attr((string) $visible) . '" data-interval="' . esc_attr((string) $interval) . '" style="--mlcp-ag-visible:' . (int) $visible . ';' . (sanitize_hex_color((string) $atts['accent']) ? '--mlcp-ag-accent:' . sanitize_hex_color((string) $atts['accent']) . ';' : '') . '">';
         $out .= '<div class="mlcp-ag-viewport"><ul class="mlcp-ag-list" role="list">';
         foreach ($rows as $r) {
             $item  = $r['item'];

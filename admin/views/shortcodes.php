@@ -22,6 +22,7 @@
             <button type="button" class="button mlcp-copy-shortcode" data-shortcode='[ml_carousel group="eventos" template="agenda" visible="3" interval="4000"]'>Copiar</button>
         </div>
         <p>Campo <strong>Data</strong> do banner: AAAA-MM-DD ou DD-MM-AAAA (vazio = usa a data de expiração).</p>
+        <p>Opções: <code>visible</code> (linhas visíveis, padrão 3), <code>interval</code> (ms entre cada subida, padrão 4000), <code>accent</code> (cor da data, ex.: <code>accent="#0a6"</code>). Serve para qualquer site.</p>
     </div>
 
     <div class="mlcp-card-panel">

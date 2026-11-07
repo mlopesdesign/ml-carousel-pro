@@ -4,7 +4,7 @@ Tags: carousel, banner, slider, shortcode, groups
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.14.0
+Stable tag: 1.14.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -45,6 +45,9 @@ Sim. Cada grupo tem suas próprias configurações de layout, dimensões, autopl
 No modo Contain, a imagem é exibida inteira sem corte, ideal para logos ou imagens com proporções variadas.
 
 == Changelog ==
+
+= 1.14.1 =
+* Template Agenda: atributo accent (cor da data) para usar em qualquer site; opções documentadas na tela Shortcodes.
 
 = 1.14.0 =
 * Novo template Agenda: [ml_carousel group="eventos" template="agenda" visible="3" interval="4000"]. Data grande, título, subtítulo e cartaz em ordem de data; eventos passados somem; com mais itens que visible, a lista sobe sozinha (pausa no mouse/foco, respeita reduzir movimento). Cartaz abre no lightbox do plugin; com link, o título leva ao link.
