@@ -4,7 +4,7 @@
  *
  * Hooks into WordPress plugin update flow using GitHub Releases as source.
  * Fonte: repositorio publico mlopesdesign/ml-carousel-pro-releases (somente ZIPs).
- * Nenhum token e necessario.
+ * Token opcional (MLCP_GITHUB_TOKEN). Sem cota na API, usa a rota web do GitHub.
  *
  * @package ML_Carousel_Pro
  */
@@ -82,14 +82,71 @@ class MLCP_GitHub_Updater {
         );
     }
 
+    /**
+     * Token opcional (constante MLCP_GITHUB_TOKEN ou filtro mlcp_github_token).
+     * Sem token a API do GitHub limita 60 consultas/hora por IP; em hospedagem
+     * compartilhada esse limite costuma estar esgotado pelos vizinhos.
+     */
+    private function get_token() {
+        $token = defined( 'MLCP_GITHUB_TOKEN' ) ? (string) constant( 'MLCP_GITHUB_TOKEN' ) : '';
+        return trim( (string) apply_filters( 'mlcp_github_token', $token ) );
+    }
+
     private function request_args() {
-        return array(
+        $args = array(
             'timeout'    => 15,
             'user-agent' => 'ML-Banner-Pro-Updater/' . MLCP_VERSION . '; WordPress/' . get_bloginfo( 'version' ),
             'headers'    => array(
-                'Accept' => 'application/vnd.github.v3+json',
+                'Accept' => 'application/vnd.github+json',
             ),
         );
+        $token = $this->get_token();
+        if ( $token !== '' ) {
+            $args['headers']['Authorization'] = 'Bearer ' . $token;
+        }
+        return $args;
+    }
+
+    /**
+     * Rota sem a API (nao tem o limite de 60/h): github.com/.../releases/latest
+     * redireciona para /releases/tag/vX.Y.Z; o ZIP oficial tem endereco fixo.
+     * Confirma que o ZIP existe antes de oferecer a atualizacao.
+     */
+    private function fetch_latest_release_web() {
+        $base = 'https://github.com/' . self::GITHUB_USER . '/' . self::GITHUB_REPO;
+        $args = array( 'timeout' => 15, 'redirection' => 0, 'user-agent' => 'ML-Banner-Pro-Updater/' . MLCP_VERSION );
+        $res  = wp_remote_head( $base . '/releases/latest', $args );
+        if ( is_wp_error( $res ) ) {
+            $this->remember_error( 'web: ' . $res->get_error_message() );
+            return null;
+        }
+        $location = (string) wp_remote_retrieve_header( $res, 'location' );
+        if ( ! preg_match( '#/releases/tag/(v?[0-9][0-9A-Za-z.\-]*)$#', $location, $m ) ) {
+            $this->remember_error( 'web: sem redirecionamento (' . (int) wp_remote_retrieve_response_code( $res ) . ')' );
+            return null;
+        }
+        $tag     = $m[1];
+        $version = ltrim( $tag, 'v' );
+        $zip     = self::PLUGIN_SLUG . '-v' . $version . '.zip';
+        $url     = $base . '/releases/download/' . rawurlencode( $tag ) . '/' . $zip;
+        $check   = wp_remote_head( $url, $args );
+        $code    = is_wp_error( $check ) ? 0 : (int) wp_remote_retrieve_response_code( $check );
+        if ( $code < 200 || $code >= 400 ) {
+            $this->remember_error( 'web: ZIP ' . $zip . ' nao encontrado (' . $code . ')' );
+            return null;
+        }
+        return array(
+            'tag_name'     => $tag,
+            'html_url'     => $base . '/releases/tag/' . $tag,
+            'body'         => '',
+            'published_at' => '',
+            'assets'       => array( array( 'name' => $zip, 'browser_download_url' => $url ) ),
+            'mlcp_source'  => 'web',
+        );
+    }
+
+    private function remember_error( $msg ) {
+        update_option( 'mlcp_updater_last_error', gmdate( 'Y-m-d H:i' ) . ' UTC - ' . $msg, false );
     }
 
     public function fetch_latest_release( $force = false ) {
@@ -109,8 +166,17 @@ class MLCP_GitHub_Updater {
 
         $response = wp_remote_get( $this->api_url(), $this->request_args() );
         $body     = null;
-        if ( ! is_wp_error( $response ) && (int) wp_remote_retrieve_response_code( $response ) === 200 ) {
+        if ( is_wp_error( $response ) ) {
+            $this->remember_error( 'api: ' . $response->get_error_message() );
+        } elseif ( (int) wp_remote_retrieve_response_code( $response ) === 200 ) {
             $body = json_decode( wp_remote_retrieve_body( $response ), true );
+        } else {
+            $this->remember_error( 'api: HTTP ' . (int) wp_remote_retrieve_response_code( $response ) . ' ' . substr( (string) wp_remote_retrieve_header( $response, 'x-ratelimit-remaining' ), 0, 8 ) );
+        }
+
+        // API indisponivel ou sem cota: tenta a rota web, que nao tem limite por IP.
+        if ( ! is_array( $body ) || empty( $body['tag_name'] ) ) {
+            $body = $this->fetch_latest_release_web();
         }
 
         if ( ! is_array( $body ) || empty( $body['tag_name'] ) ) {
@@ -302,8 +368,8 @@ class MLCP_GitHub_Updater {
             'current_version'  => MLCP_VERSION,
             'remote_version'   => $remote_version !== '' ? $remote_version : '—',
             'update_available' => ( $remote_version !== '' && $zip_url !== '' && version_compare( $remote_version, MLCP_VERSION, '>' ) ) ? 'Sim' : 'Não',
-            'source_status'    => $release ? 'GitHub Release detectado ✓' : 'Sem resposta da API — verifique a conectividade',
-            'token_set'        => 'Não necessário (repositório público de releases)',
+            'source_status'    => $release ? ( ! empty( $release['mlcp_source'] ) ? 'GitHub Release detectado ✓ (rota web — API sem cota)' : 'GitHub Release detectado ✓' ) : 'Sem resposta do GitHub — ' . (string) get_option( 'mlcp_updater_last_error', 'verifique a conectividade' ),
+            'token_set'        => $self && $self->get_token() !== '' ? 'Configurado' : 'Não necessário (repositório público de releases)',
             'zip_detected'     => $zip_url !== '' ? 'Sim' : 'Não',
             'zip_url'          => $zip_url !== '' ? 'asset detectado' : '—',
         );

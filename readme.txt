@@ -4,7 +4,7 @@ Tags: carousel, banner, slider, shortcode, groups
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.14.2
+Stable tag: 1.14.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -45,6 +45,9 @@ Sim. Cada grupo tem suas próprias configurações de layout, dimensões, autopl
 No modo Contain, a imagem é exibida inteira sem corte, ideal para logos ou imagens com proporções variadas.
 
 == Changelog ==
+
+= 1.14.3 =
+* Atualização automática: quando a API do GitHub não responde ou está sem cota (limite de 60 consultas/hora por IP, comum em hospedagem compartilhada), o plugin consulta a página de releases do GitHub e oferece a versão nova do mesmo jeito. Token opcional (MLCP_GITHUB_TOKEN). A tela de licença mostra o motivo da última falha.
 
 = 1.14.2 =
 * Tablet (até 980px): a largura dos cards passa a ser calculada pela área visível do carrossel (container query). Antes o cálculo usava a trilha inteira e cada card ficava maior que a tela, com a imagem cortada.
