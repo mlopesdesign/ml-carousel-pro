@@ -4,7 +4,7 @@ Tags: carousel, banner, slider, shortcode, groups
 Requires at least: 6.0
 Tested up to: 6.8
 Requires PHP: 7.4
-Stable tag: 1.14.1
+Stable tag: 1.14.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -45,6 +45,9 @@ Sim. Cada grupo tem suas próprias configurações de layout, dimensões, autopl
 No modo Contain, a imagem é exibida inteira sem corte, ideal para logos ou imagens com proporções variadas.
 
 == Changelog ==
+
+= 1.14.2 =
+* Tablet (até 980px): a largura dos cards passa a ser calculada pela área visível do carrossel (container query). Antes o cálculo usava a trilha inteira e cada card ficava maior que a tela, com a imagem cortada.
 
 = 1.14.1 =
 * Template Agenda: atributo accent (cor da data) para usar em qualquer site; opções documentadas na tela Shortcodes.
